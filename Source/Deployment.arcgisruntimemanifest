@@ -1,0 +1,7 @@
+{
+  "version": "10.2.5",
+  "suppress": [],
+  "include": {
+    "ArcGIS Runtime": true
+  }
+}
