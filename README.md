@@ -1,11 +1,12 @@
-# ellipsoidus
+# Ellipsoidus
 Geodetic calculation on ellipsoid surface. Calculate distance, azimuth between Latitude/Longitude points. Calculate line paraller to other on ellipsoid surface.
 
-See it in action:
-https://www.youtube.com/watch?v=GR1ueOk6KGo
+* See it in action on [YouTube](https://www.youtube.com/watch?v=GR1ueOk6KGo)
+* Read [Ellipsoidus Wiki](https://github.com/kubaszostak/ellipsoidus/wiki)
 
 ### Download
 https://github.com/kubaszostak/ellipsoidus/releases
+
 
 ### Requirements
 * [Microsoft .NET Framework 4.5](http://www.microsoft.com/net/downloads)

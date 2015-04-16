@@ -17,5 +17,5 @@ The given example uses GeoAPI, although it was not necessary, this was done to s
 
 ---
 
-C# source code
+Original C# source code
 https://github.com/suryapratap/GeographicLib
