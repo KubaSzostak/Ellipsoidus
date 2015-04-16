@@ -114,7 +114,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="SampleData\base-line-de.txt" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GeographicLib\GeographicLib.csproj">
       <Project>{4b7604f5-cfb1-4d46-b0fd-fb00f3be7238}</Project>
