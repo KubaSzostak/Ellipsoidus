@@ -14,7 +14,7 @@
                 <esri:Map.InitialViewpoint>
                     <esri:ViewpointExtent XMin="12.0" XMax="44.0" YMin="0" YMax="75" SpatialReferenceID="4326" />
                 </esri:Map.InitialViewpoint>
-                <esri:ArcGISTiledMapServiceLayer ID="Basemap" ServiceUri="http://services.arcgisonline.com/ArcGIS/rest/services/ESRI_StreetMap_World_2D/MapServer" />
+                <esri:ArcGISTiledMapServiceLayer ID="Basemap" x:Name="BasemapLayer" ServiceUri="http://services.arcgisonline.com/ArcGIS/rest/services/ESRI_StreetMap_World_2D/MapServer" />
                 <esri:GraphicsLayer ID="TestsLayer" x:Name="TestsLayer" DisplayName="Tests" />
                 <esri:GraphicsLayer ID="SourceLineProjectedLayer" x:Name="SourceLineProjectedLayer" DisplayName="Source Line (projected)" IsVisible="False" />
                 <esri:GraphicsLayer ID="SourceLineGeodesicLayer" x:Name="SourceLineGeodesicLayer" DisplayName="Source Line (geodesic)" />

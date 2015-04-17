@@ -92,18 +92,26 @@ namespace Ellipsoidus
 		{
 			if (e.LoadError != null)
 			{
-				string innerMsg = "";
+                var errMsg = string.Format("Error while loading layer '{0}': \r\n - {1}", e.Layer.ID, e.LoadError.Message);
 				if (e.LoadError.InnerException != null)
 				{
-					innerMsg = e.LoadError.InnerException.Message;
+                    errMsg += "\r\n - " + e.LoadError.InnerException.Message;
 				}
 
-				MessageBox.Show(string.Format("Error while loading layer : {0} - {1} \r\n" + innerMsg, e.Layer.ID, e.LoadError.Message));
-
-				if (Application.Current != null)
+                if (e.Layer == this.BasemapLayer)
+                {
+                    errMsg += "\r\n - Check internet connection.";
+                    errMsg += "\r\n\r\n" + "Basemap will be not displayed";
+                    MessageBox.Show(errMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                else
+                {
+                    MessageBox.Show(errMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 					Application.Current.Shutdown();
+                }
 			}
 		}
+
 		private void MyMapView_MouseMove(object sender, MouseEventArgs e)
 		{
 			if (this.MapView.Extent != null)
