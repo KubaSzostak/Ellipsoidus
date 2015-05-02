@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ellipsoidus", "Source\Ellipsoidus.csproj", "{6B694B40-9261-4E39-90B3-0BD128EE15FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeographicLib", "GeographicLib\GeographicLib.csproj", "{4B7604F5-CFB1-4D46-B0FD-FB00F3BE7238}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F4C7BCC4-FFA3-4449-900C-0E3CB964064C}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ArcGISRuntime", "ArcGISRuntime", "{34135C73-922C-4C6E-BB21-397297D24A9B}"
+	ProjectSection(SolutionItems) = preProject
+		ArcGISRuntime\Esri-112x64.png = ArcGISRuntime\Esri-112x64.png
+		ArcGISRuntime\Esri-56x32.png = ArcGISRuntime\Esri-56x32.png
+		ArcGISRuntime\README.md = ArcGISRuntime\README.md
+		ArcGISRuntime\url.txt = ArcGISRuntime\url.txt
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6B694B40-9261-4E39-90B3-0BD128EE15FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B694B40-9261-4E39-90B3-0BD128EE15FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B694B40-9261-4E39-90B3-0BD128EE15FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B694B40-9261-4E39-90B3-0BD128EE15FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B7604F5-CFB1-4D46-B0FD-FB00F3BE7238}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B7604F5-CFB1-4D46-B0FD-FB00F3BE7238}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B7604F5-CFB1-4D46-B0FD-FB00F3BE7238}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B7604F5-CFB1-4D46-B0FD-FB00F3BE7238}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
