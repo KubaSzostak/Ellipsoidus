@@ -190,6 +190,8 @@ namespace Esri
             cutters.AddRange(this.OffsetArcs);
             var buffLines = new List<GeodesicPolyline>(this.OffsetLines.Count);
 
+
+            // First: cut lines
             foreach (GeodesicPolyline ln in this.OffsetLines)
             {
                 List<GeodesicPolyline> lnCutRes = new List<GeodesicPolyline>();
@@ -202,6 +204,7 @@ namespace Esri
                 buffLines.AddRange(lnCutRes);
             }
 
+            // Then: cut arcs
             this.OffsetLines = buffLines;
             var buffArcs = new List<GeodesicArc>(this.OffsetArcs.Count);
             foreach (GeodesicArc arc in this.OffsetArcs)

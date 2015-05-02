@@ -6,15 +6,56 @@ using System.Linq;
 namespace Esri
 {
 
+    public class Geodesic
+    {
+
+        private const double EarthRadius = 6371000.0; // meters
+        public const double RadToDeg = 180.0 / Math.PI;
+        public const double DegToRad = Math.PI / 180.0;
+
+        
+        /// <summary>
+        /// Represents the smallest distance between two points (meters)
+        /// </summary>
+        public const double DistanceEpsilon = 0.001;
+
+        /// <summary>
+        /// Represents the smallest arc length on the auxiliary sphere between two points (degrees)
+        /// </summary>
+        public static readonly double ArcEpsilon = Math.Atan(DistanceEpsilon / EarthRadius) * RadToDeg; 
+        
+        // 0.001m -> 0.000 000 008 99◦
+
+        // Karney:
+        // φ:  41.793 310 205 06◦ 
+        // λ: 137.844 900 043 77◦
+        //      0.123 456 789 01
+
+            
+    }
+
+    public class GeodesicProximity
+    {
+        public double Azimuth { get; private set; }
+        public double Distance { get; private set; }
+        public double Direction { get; private set; }
+        public MapPoint Point { get; private set; }
+
+        public GeodesicProximity( MapPoint pt, double dist, double direction, double az)
+        {
+            this.Point = pt;
+            this.Direction = dist;
+            this.Direction = direction;
+            this.Azimuth = az;
+        }
+    }
 
     public class GeodesicLine : Polyline
     {
         public MapPointGraphic StartPoint { get; private set; }
-        public MapPointGraphic MidPoint { get; private set; }
         public MapPointGraphic EndPoint { get; private set; }
 
         public double StartAzimuth { get; private set; }
-        public double MidAzimuth { get; private set; }
         public double EndAzimuth { get; private set; }
 
         public double Distance { get; private set; }
@@ -29,18 +70,25 @@ namespace Esri
             this.Distance = geoData.s12;
             this.ArcLength = geoData.a12;
 
+
             this.StartAzimuth = geoData.azi1;
             this.EndAzimuth = geoData.azi2;
 
             this.StartPoint = points[0].Cast();
             this.EndPoint = points[points.Count - 1].Cast();
 
-            this.MidPoint = this.StartPoint.GeodesicMove(this.StartAzimuth, this.Distance * 0.5).Cast();
-            GeographicLib.GeodesicData midGeoData = GeographicLib.Geodesic.WGS84.Inverse(this.MidPoint.Y, this.MidPoint.X, this.EndPoint.Y, this.EndPoint.X);
-            this.MidAzimuth = midGeoData.azi1;
-
             this.DensifyPoints = points;
             this.DensifyDist = points[0].GeodesicDistTo(points[1]);
+
+
+            this._midPoint = new Lazy<MapPoint>(() => StartPoint.GeodesicMove(this.StartAzimuth, this.Distance * 0.5));
+            this._midAzimuth = new Lazy<double>(() =>
+            {
+                var midGeoData = GeographicLib.Geodesic.WGS84.Inverse(this.MidPoint.Y, this.MidPoint.X, this.EndPoint.Y, this.EndPoint.X);
+                return midGeoData.azi1;
+            });
+            this._startPointPlus = new Lazy<MapPoint>(() => StartPoint.GeodesicMove(this.StartAzimuth, 2.0 * Geodesic.DistanceEpsilon));
+            this._endPointPlus = new Lazy<MapPoint>(() => EndPoint.GeodesicMove(EndAzimuth, 2.0 * Geodesic.DistanceEpsilon));
         }
 
         public static GeodesicLine Create(MapPoint start, MapPoint end)
@@ -49,6 +97,33 @@ namespace Esri
             var points = GeodesicLine.GetDensifyPoints(start.Cast(), end.Cast(), geoData.azi1, geoData.s12, 1000.0);
             return new GeodesicLine(geoData, points);
         }
+
+
+        private Lazy<MapPoint> _midPoint;
+        public MapPoint MidPoint
+        {
+            get { return _midPoint.Value; }
+        }
+
+        private Lazy<double> _midAzimuth;
+        public double MidAzimuth
+        {
+            get { return _midAzimuth.Value; }
+        }
+
+        private Lazy<MapPoint> _startPointPlus;
+        private MapPoint StartPointPlus
+        {
+            get { return _startPointPlus.Value; }
+        }
+
+        private Lazy<MapPoint> _endPointPlus;
+        private MapPoint EndPointPlus
+        {
+            get { return _endPointPlus.Value; }
+        }
+
+
 
         private static List<MapPoint> GetDensifyPoints(MapPoint startPoint, MapPoint endPoint, double startAz, double lnLength, double maxSegmentLength = 1000.0)
         {
@@ -137,7 +212,7 @@ namespace Esri
 
             if (endDist < startDist)
             {
-                newStartPt = ln.MidPoint;
+                newStartPt = ln.MidPoint.Cast();
                 newEndPt = ln.EndPoint;
                 newStartDist = midDist;
                 newEndDist = endDist;
