@@ -46,7 +46,7 @@ namespace Ellipsoidus.Windows
         private void okButton_Click(object sender, RoutedEventArgs e)
         {
             double maxPrec = Math.Min(this.Distance * 0.001, 1000.0);
-            if (this.Precision < 0.005 || this.Precision > 1000.0)
+            if (this.Precision < 0.001 || this.Precision > 1000.0)
             {
                 MessageBox.Show("Precision must be between 0.001 and 1000.0");
             }
@@ -67,11 +67,16 @@ namespace Ellipsoidus.Windows
             this.distBox.Text = this.oldDist;
         }
 
-        public bool ShowDialog(bool precisionEnabled)
+        public bool ShowDialog(bool precisionEnabled, bool distEnabled)
         {
             this.oldPrec = this.precBox.Text;
             this.oldDist = this.distBox.Text;
+
             this.precBox.IsEnabled = precisionEnabled;
+            this.distBox.IsEnabled = distEnabled;
+            if (!distEnabled)
+                this.Title = "Precision parameters";
+
             return base.ShowDialog() == true;
         }
     }

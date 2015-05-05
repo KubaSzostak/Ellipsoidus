@@ -1,6 +1,7 @@
 ﻿using Esri.ArcGISRuntime.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 namespace Esri
@@ -8,40 +9,48 @@ namespace Esri
     public class GeodesicOffsetBuilder
     {
         public List<GeodesicArc> OffsetArcs = new List<GeodesicArc>();
-        public List<GeodesicPolyline> OffsetLines = new List<GeodesicPolyline>();
+        public List<GeodesicOffsetLine> OffsetLines = new List<GeodesicOffsetLine>();
+        public readonly List<GeodesicSegment> OffsetSegments = new List<GeodesicSegment>();
+        public readonly List<GeodesicMapPoint> OffsetVertices = new List<GeodesicMapPoint>();
+        public readonly List<GeodesicMapPoint> OffsetDensifyPoints = new List<GeodesicMapPoint>();
 
-        public List<GeodesicLine> SourceAuxiliaryLines = new List<GeodesicLine>();
-        public List<GeodesicLine> OutputAuxiliaryLines = new List<GeodesicLine>();
+        public readonly List<GeodesicLine> SourceAuxiliaryLines = new List<GeodesicLine>();
+        public readonly List<GeodesicLine> OutputAuxiliaryLines = new List<GeodesicLine>();
 
-        public List<Polyline> CuttedLines = new List<Polyline>();
-        public List<Polyline> CuttedArcs = new List<Polyline>();
+        public readonly List<GeodesicSegment> CuttedLines = new List<GeodesicSegment>();
+        public readonly List<GeodesicSegment> CuttedArcs = new List<GeodesicSegment>();
 
-        private readonly double MinBufferDist;
 
         public GeodesicPolyline SourceLine { get; private set; }
         public double BufferDist { get; private set; }
-        public double MaxDeviation { get; private set; }
+        public TimeSpan BuildTime { get; private set; }
 
-        public GeodesicOffsetBuilder(GeodesicPolyline ln, double dist, double maxDeviation)
+        public GeodesicMapPoint SegmentErrorPoint { get; private set; }
+
+        public GeodesicOffsetBuilder(GeodesicPolyline ln, double dist)
         {
             this.SourceLine = ln;
             this.BufferDist = dist;
-            this.MaxDeviation = maxDeviation;
-            this.MinBufferDist = this.BufferDist - this.MaxDeviation * 2.0;
         }
 
         public void Build()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             this.OffsetArcs.Clear();
             this.OffsetLines.Clear();
             this.SourceAuxiliaryLines.Clear();
             this.CuttedLines.Clear();
             this.CuttedArcs.Clear();
 
-            this.BuildLinesAndArcs(this.BufferDist, this.MaxDeviation);
+            this.BuildLinesAndArcs(this.BufferDist);
             this.CutAll();
             this.RemoveLinesInside();
             this.RemoveArcsInside();
+
+            this.BuildSegments();
+
+            sw.Stop();
+            this.BuildTime = sw.Elapsed;
         }
 
         public Task BuildAsync()
@@ -50,43 +59,132 @@ namespace Esri
             return Task.Run(action, CancellationToken.None);
         }
 
-        private double DistToSourceLine(MapPoint point)
+
+        public bool IsInside(params MapPoint[] points)
         {
-            return this.SourceLine.GeodesicDistTo(point, this.MaxDeviation * 0.5);
+            var minBufferDist = this.BufferDist - Geodesic.DistanceEpsilon * 2.0;
+            foreach (var pt in points)
+            {
+                var dist = this.SourceLine.GeodesicDistTo(pt);
+                if (dist < minBufferDist)
+                    return true;                
+            }
+            return false;
         }
 
-        private void BuildLinesAndArcs(double dist, double maxDeviation)
+        private void BuildSegments()
+        {
+            SegmentErrorPoint = null;
+            var segments = new HashSet<GeodesicSegment>(this.OffsetArcs);
+            foreach (var ln in this.OffsetLines)
+                segments.Add(ln);
+
+            var cutted = new HashSet<GeodesicSegment>(this.CuttedArcs);
+            foreach (var ln in CuttedLines)
+                cutted.Add(ln);
+
+            this.OffsetSegments.Clear();
+
+            // first segment is always arc
+            GeodesicSegment prevSegm = this.OffsetArcs[0];
+            this.OffsetSegments.Add(prevSegm);
+            segments.Remove(prevSegm);
+            
+            while (segments.Count > 0)
+            {
+                var segm = segments.FindByStartPoint(prevSegm.EndPoint);
+
+                // Maby it is already deleted because of hardware computation errors
+                // Check it again
+                if (segm == null)
+                {
+                    segm = this.CuttedLines.FindByStartPoint(prevSegm.EndPoint);
+                    if (segm != null) 
+                    {
+                        this.CuttedLines.Remove(segm); 
+                        this.OffsetLines.Add(segm as GeodesicOffsetLine);
+                    }
+                }
+                if (segm == null) 
+                { 
+                    segm = this.CuttedArcs.FindByStartPoint(prevSegm.EndPoint);
+                    if (segm != null) 
+                    { 
+                        this.CuttedArcs.Remove(segm);
+                        this.OffsetArcs.Add(segm as GeodesicArc);
+                    }
+                }
+
+                // Cannot find next segment 
+                if (segm == null)
+                {
+                    SegmentErrorPoint = prevSegm.EndPoint;
+                    return;
+                }
+
+                this.OffsetSegments.Add(segm);
+                segments.Remove(segm);
+                prevSegm = segm;
+            }
+            BuildOffsetPoints();
+        }
+
+        private void BuildOffsetPoints()
+        {
+            this.OffsetVertices.Clear();
+            this.OffsetDensifyPoints.Clear();
+
+            foreach (var segm in this.OffsetSegments)
+            {
+                this.OffsetVertices.Add(segm.StartPoint);
+            }
+        }
+
+        private void BuildLinesAndArcs(double dist)
         {
             GeodesicLine prevLn = null;
             this.OffsetLines.Clear();
+            this.OffsetArcs.Clear();
 
             for (int i = 0; i < this.SourceLine.Lines.Count; i++)
             {
                 var ln = this.SourceLine.Lines[i];
-                var offsetLn = ln.Offset(-dist, maxDeviation);
+                var offsetLn = ln.Offset(-dist);
+                offsetLn.UpdateOrigin("Offset");
 
-                this.AddAuxiliary(ln.StartPoint, offsetLn.FirstVertex);
-                this.AddAuxiliary(ln.EndPoint, offsetLn.LastVertex);
+                offsetLn.StartPoint.SourceGeometry = ln;
+                offsetLn.StartPoint.SourcePoint = ln.StartPoint;
+
+                offsetLn.EndPoint.SourceGeometry = ln;
+                offsetLn.EndPoint.SourcePoint = ln.EndPoint;
+
+                this.AddAuxiliary(ln.StartPoint, offsetLn.StartPoint);
+                this.AddAuxiliary(ln.EndPoint, offsetLn.EndPoint);
 
                 GeodesicArc arc = null;
                 if (prevLn == null)
                 {
-                    arc = GeodesicArc.Create(ln.StartPoint, dist, ln.StartAzimuth - 180.0, ln.StartAzimuth - 90.0, maxDeviation);
+                    arc = GeodesicArc.Create(ln.StartPoint, Math.Abs(dist), ln.StartAzimuth - 180.0, ln.StartAzimuth - 90.0);
+                    arc.StartPoint.SourceGeometry = ln;
+                    arc.EndPoint.SourceGeometry = ln;
                 }
                 else
                 {
-                    var startAz = Utils.NormalizeAngle(prevLn.EndAzimuth - 90.0);
-                    var endAz = Utils.NormalizeAngle(ln.StartAzimuth - 90.0);
-                    var angle = Utils.NormalizeAngle(endAz - startAz);
+                    var startAz = prevLn.EndAzimuth - 90.0; 
+                    var endAz = ln.StartAzimuth - 90.0; 
+                    var angle = Geodesic.GetAngle(startAz, endAz);
                     if (angle < 180.0)
                     {
-                        arc = GeodesicArc.Create(ln.StartPoint, dist, startAz, endAz, maxDeviation);
+                        arc = GeodesicArc.Create(ln.StartPoint, Math.Abs(dist), startAz, endAz);
+                        arc.StartPoint.SourceGeometry = prevLn;
+                        arc.EndPoint.SourceGeometry = ln;
                     }
                 }
 
                 if (arc != null)
                 {
                     this.OffsetArcs.Add(arc);
+                    arc.UpdateOrigin("Offset");
                 }
 
                 this.OffsetLines.Add(offsetLn);
@@ -100,13 +198,15 @@ namespace Esri
 
                 prevLn = ln;
             }
-
             var lastLn = this.SourceLine.Lines[this.SourceLine.Lines.Count - 1];
-            var lastArc = GeodesicArc.Create(lastLn.EndPoint, dist, lastLn.EndAzimuth - 90.0, lastLn.EndAzimuth, maxDeviation);
+            var lastArc = GeodesicArc.Create(lastLn.EndPoint, Math.Abs(dist), lastLn.EndAzimuth - 90.0, lastLn.EndAzimuth);
+            lastArc.UpdateOrigin("Offset");
+            lastArc.StartPoint.SourceGeometry = lastLn;
+            lastArc.EndPoint.SourceGeometry = lastLn;
             this.OffsetArcs.Add(lastArc);
         }
 
-        private void CutLines(GeodesicLine refLn1, GeodesicLine refLn2, ref GeodesicPolyline offsetLn1, ref GeodesicPolyline offsetLn2)
+        private void CutLines(GeodesicLine refLn1, GeodesicLine refLn2, ref GeodesicOffsetLine offsetLn1, ref GeodesicOffsetLine offsetLn2)
         {
             var ln1CutRes = offsetLn1.Cut(offsetLn2);
             var ln2CutRes = offsetLn2.Cut(offsetLn1);
@@ -118,14 +218,16 @@ namespace Esri
             if (ln1CutRes.Count == 2)
             {
                 offsetLn1 = this.GetCuttedLine(refLn2, ln1CutRes);
+                offsetLn1.UpdateOrigin("Cut");
             }
             if (ln2CutRes.Count == 2)
             {
                 offsetLn2 = this.GetCuttedLine(refLn1, ln2CutRes);
+                offsetLn2.UpdateOrigin("Cut");
             }
         }
 
-        private GeodesicPolyline GetCuttedLine(GeodesicLine oppositeRefLn, List<GeodesicPolyline> offsetLines)
+        private GeodesicOffsetLine GetCuttedLine(GeodesicLine oppositeRefLn, List<GeodesicOffsetLine> offsetLines)
         {
             if (offsetLines.Count > 2 || offsetLines.Count < 1)
             {
@@ -138,33 +240,40 @@ namespace Esri
             var ln0 = offsetLines[0];
             var ln1 = offsetLines[1];
 
-            var ln0DistFirst = oppositeRefLn.GeodesicDistTo(ln0.FirstVertex, this.MaxDeviation * 0.5);
-            var ln0DistLast = oppositeRefLn.GeodesicDistTo(ln0.LastVertex, this.MaxDeviation * 0.5);
+            var ln0DistFirst = oppositeRefLn.GeodesicDistTo(ln0.StartPoint);
+            var ln0DistLast = oppositeRefLn.GeodesicDistTo(ln0.EndPoint);
+            var ln0Dist = Math.Min(ln0DistFirst, ln0DistLast);
 
-            if (ln0DistFirst >= this.MinBufferDist && ln0DistLast >= this.MinBufferDist)
+            var ln1DistFirst = oppositeRefLn.GeodesicDistTo(ln1.StartPoint);
+            var ln1DistLast = oppositeRefLn.GeodesicDistTo(ln1.EndPoint);
+            var ln1Dist = Math.Min(ln1DistFirst, ln1DistLast);
+
+            if (ln0Dist < ln1Dist)
+            {
+                this.CuttedLines.Add(ln0);
+                return ln1; 
+            }
+            else
             {
                 this.CuttedLines.Add(ln1);
                 return ln0;
-            }
-
-            var ln1DistFirst = oppositeRefLn.GeodesicDistTo(ln1.FirstVertex, this.MaxDeviation * 0.5);
-            var ln1DistLast = oppositeRefLn.GeodesicDistTo(ln1.LastVertex, this.MaxDeviation * 0.5);
-
-            if (ln1DistFirst < this.MinBufferDist || ln1DistLast < this.MinBufferDist)
-            {
-                throw new Exception("ERROR: " + base.GetType().Name + ".GetCutLine() inconsistent result: offset criteria not met");
-            }
-            this.CuttedLines.Add(ln0);
-            return ln1;            
+            }    
         }
 
-        private List<GeodesicPolyline> CutLines(List<GeodesicPolyline> lines, Polyline cutter)
+        private List<GeodesicOffsetLine> CutLines(List<GeodesicOffsetLine> lines, Polyline cutter)
         {
-            var res = new List<GeodesicPolyline>(lines.Count);
-            foreach (GeodesicPolyline ln in lines)
+            var res = new List<GeodesicOffsetLine>();
+            foreach (var ln in lines)
             {
                 if (GeometryEngine.Crosses(ln, cutter))
-                    res.AddRange(ln.Cut(cutter));
+                {
+                    var cutRes = ln.Cut(cutter);
+                    foreach (var cr in cutRes)
+                    {
+                        cr.UpdateOrigin("Cut");
+                        res.Add(cr);
+                    }
+                }
                 else
                     res.Add(ln);
             }
@@ -174,10 +283,17 @@ namespace Esri
         private List<GeodesicArc> CutArcs(List<GeodesicArc> arcs, Polyline cutter)
         {
             var res = new List<GeodesicArc>(arcs.Count);
-            foreach (GeodesicArc arc in arcs)
+            foreach (var arc in arcs)
             {
                 if (GeometryEngine.Crosses(arc, cutter))
-                    res.AddRange(arc.Cut(cutter));
+                {
+                    var cutRes = arc.Cut(cutter);
+                    foreach (var cr in cutRes)
+                    {
+                        cr.UpdateOrigin("Cut");
+                        res.Add(cr);
+                    }
+                }
                 else
                     res.Add(arc);
             }
@@ -188,15 +304,15 @@ namespace Esri
         {
             var cutters = new List<Polyline>(this.OffsetLines);
             cutters.AddRange(this.OffsetArcs);
-            var buffLines = new List<GeodesicPolyline>(this.OffsetLines.Count);
+            var buffLines = new List<GeodesicOffsetLine>(this.OffsetLines.Count);
 
 
             // First: cut lines
-            foreach (GeodesicPolyline ln in this.OffsetLines)
+            foreach (var ln in this.OffsetLines)
             {
-                List<GeodesicPolyline> lnCutRes = new List<GeodesicPolyline>();
+                var lnCutRes = new List<GeodesicOffsetLine>();
                 lnCutRes.Add(ln);
-                foreach (Polyline cutter in cutters)
+                foreach (var cutter in cutters)
                 {
                     if (ln != cutter)
                         lnCutRes = this.CutLines(lnCutRes, cutter);
@@ -207,11 +323,11 @@ namespace Esri
             // Then: cut arcs
             this.OffsetLines = buffLines;
             var buffArcs = new List<GeodesicArc>(this.OffsetArcs.Count);
-            foreach (GeodesicArc arc in this.OffsetArcs)
+            foreach (var arc in this.OffsetArcs)
             {
                 var arcCutRes = new List<GeodesicArc>();
                 arcCutRes.Add(arc);
-                foreach (Polyline cutter in cutters)
+                foreach (var cutter in cutters)
                 {
                     if (cutter != arc)
                         arcCutRes = this.CutArcs(arcCutRes, cutter);
@@ -224,12 +340,10 @@ namespace Esri
 
         private void RemoveLinesInside()
         {
-            var buffLines = new List<GeodesicPolyline>(this.OffsetLines.Count);
-            foreach (GeodesicPolyline ln in this.OffsetLines)
+            var buffLines = new List<GeodesicOffsetLine>(this.OffsetLines.Count);
+            foreach (var ln in this.OffsetLines)
             {
-                var firstDist = this.DistToSourceLine(ln.FirstVertex);
-                var lastDist = this.DistToSourceLine(ln.LastVertex);
-                if (firstDist < this.MinBufferDist || lastDist < this.MinBufferDist)
+                if (this.IsInside(ln.StartPoint, ln.EndPoint))
                     this.CuttedLines.Add(ln);
                 else
                     buffLines.Add(ln);
@@ -240,11 +354,9 @@ namespace Esri
         private void RemoveArcsInside()
         {
             var buffArcs = new List<GeodesicArc>(this.OffsetArcs.Count);
-            foreach (GeodesicArc arc in this.OffsetArcs)
+            foreach (var arc in this.OffsetArcs)
             {
-                var firstDist = this.DistToSourceLine(arc.FirstVertex);
-                var lastDist = this.DistToSourceLine(arc.LastVertex);
-                if (firstDist < this.MinBufferDist || lastDist < this.MinBufferDist)
+                if (this.IsInside(arc.StartPoint, arc.EndPoint))
                     this.CuttedArcs.Add(arc);
                 else
                     buffArcs.Add(arc);
@@ -258,18 +370,21 @@ namespace Esri
             this.SourceAuxiliaryLines.Add(ln);
         }
 
+
+
         public IEnumerable<MapPoint> GetCalculatedPoints()
         {
             //var res = MapPointHashSet.Create2d(this.MaxDeviation);
             var res = new List<MapPoint>();
-            foreach (GeodesicArc arc in this.OffsetArcs)
+            foreach (var arc in this.OffsetArcs)
             {
-                res.Add(arc.FirstVertex);
-                res.Add(arc.LastVertex);
+                res.Add(arc.StartPoint);
+                res.Add(arc.EndPoint);
             }
-            foreach (GeodesicPolyline ln in this.OffsetLines)
+            foreach (var ln in this.OffsetLines)
             {
-                res.AddRange(ln.Vertices);
+                res.Add(ln.StartPoint);
+                res.Add(ln.EndPoint);
             }
             return res;
         }
@@ -278,11 +393,11 @@ namespace Esri
         {
             //var res = MapPointHashSet.Create2d(this.MaxDeviation);
             var res = new List<MapPoint>();
-            foreach (GeodesicArc arc in this.OffsetArcs)
+            foreach (var arc in this.OffsetArcs)
             {
                 res.AddRange(arc.DensifyPoints);
             }
-            foreach (GeodesicPolyline ln in this.OffsetLines)
+            foreach (var ln in this.OffsetLines)
             {
                 res.AddRange(ln.DensifyPoints);
             }

@@ -50,7 +50,7 @@ namespace System
                 }
                 return res;
             }
-            catch
+            catch 
             {
                 throw new Exception("Invalid angle format: " + s);
             }
@@ -74,7 +74,11 @@ namespace System
 
         public static string DistToString(GeodesicLine ln)
         {
-            return ln.Distance.ToString("0.000") + " (" + Utils.DegToString(ln.ArcLength) + ")";
+            var dist = ln.Distance;
+            if (dist > 0.1)
+                return ln.Distance.ToString("0.000") + " (" + Utils.DegToString(ln.ArcLength) + ")";
+            else
+                return ln.Distance.ToString("0.0000") + " (" + Utils.DegToString(ln.ArcLength) + ")";
         }
 
         public static string RoundDist(double dist)
@@ -94,7 +98,7 @@ namespace System
             return  dist.ToString("0.000") + " m";
         }
 
-        public static MapPointGraphic StringToPoint(string s)
+        public static GeodesicMapPoint StringToPoint(string s)
         {
             string[] words = s.Split(" \t".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             if (words.Length < 3)
@@ -107,28 +111,12 @@ namespace System
             {
                 var y = Utils.StringToDeg(words[1]);
                 var x = Utils.StringToDeg(words[2]);
-                return new MapPointGraphic(id, x, y);
+                return new GeodesicMapPoint(id, x, y);
             }
             catch (Exception ex)
             {
                 throw new Exception("Invalid coordinate format: " + s + "\r\n Expected format is: Id  12.345  34.567", ex);
             }
-        }
-
-        public static double NormalizeAngle(double a)
-        {
-            if (a > 360.0)
-            {
-                a -= 360.0;
-                return Utils.NormalizeAngle(a);
-            }
-            else if (a < 0.0)
-            {
-                a += 360.0;
-                return Utils.NormalizeAngle(a);
-            }
-
-            return a;
         }
 
         public static void SaveToFile(string filePath, IEnumerable<MapPoint> points, string header = null)
@@ -142,7 +130,7 @@ namespace System
             }
 
             int id = 1;
-            foreach (MapPoint pt in points)
+            foreach (var pt in points)
             {
                 var ptg = pt.Cast();
                 if (string.IsNullOrWhiteSpace(ptg.Id))
@@ -156,10 +144,10 @@ namespace System
             File.WriteAllLines(filePath, lines.ToArray());
         }
 
-        public static List<MapPointGraphic> LoadFromFile(string filePath)
+        public static List<GeodesicMapPoint> LoadFromFile(string filePath)
         {
             var lines = IO.File.ReadAllLines(filePath);
-            var res = new List<MapPointGraphic>();
+            var res = new List<GeodesicMapPoint>();
 
             foreach (var ln in lines)
             {

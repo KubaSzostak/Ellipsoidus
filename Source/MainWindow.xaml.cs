@@ -1,4 +1,5 @@
-﻿using Ellipsoidus.Windows;
+﻿using Ellipsoidus.Properties;
+using Ellipsoidus.Windows;
 using Esri;
 using Esri.ArcGISRuntime.Controls;
 using Esri.ArcGISRuntime.Geometry;
@@ -39,9 +40,16 @@ namespace Ellipsoidus
 		private Symbols srcGeoSymb = Symbols.Blue3;
 		private Symbols srcPrjSymb = Symbols.Blue2;
 
+        private string ExeDir = null;
+        private Settings Settings = Settings.Default;
+
 		public MainWindow()
 		{
 			this.InitializeComponent();
+            ExeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+            if (string.IsNullOrEmpty(Settings.LoadBaseLineFile))
+                Settings.LoadBaseLineFile = Path.Combine(ExeDir, "SampleData", "de-base-line.txt");
+
 			this.MapView.Map.SpatialReference = SpatialReference.Create(4326);
 
 			this.MeasurementsLayer.AddLineLabelling(Symbols.Black2, "Value");
@@ -60,6 +68,11 @@ namespace Ellipsoidus
 			this.progressBar.IsIndeterminate = true;
 		}
 
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            this.Settings.Save();
+        }
+
 		public void ShowInfoBox(string info)
 		{
 			this.hideInfoTimer.Stop();
@@ -71,11 +84,14 @@ namespace Ellipsoidus
 		public void HideInfoBox()
 		{
 			this.hideInfoTimer.Stop();
-			this.infoBox.Visibility = Visibility.Collapsed;
+            this.infoBox.Visibility = Visibility.Collapsed;
+            this.progressBar.IsIndeterminate = false; // allow starting animation from beginning
 		}
 
 		public async Task StartProgress(Task task, string info)
 		{
+            this.progressBar.IsIndeterminate = true; // start animation from beginning
+
 			this.progressBox.Visibility = Visibility.Visible;
 			this.statusInfo.Content = info;
 			await task;
@@ -148,7 +164,7 @@ namespace Ellipsoidus
 			else
 			{
                 var paramsWnd = new OffsetParametersWindow();
-				if (paramsWnd.ShowDialog(true))
+				if (paramsWnd.ShowDialog(true, true))
 				{
 					this.AddBuffer(paramsWnd.Distance, paramsWnd.Precision);
 				}
@@ -164,9 +180,9 @@ namespace Ellipsoidus
 			else
 			{
                 var paramsWnd = new OffsetParametersWindow();
-				if (paramsWnd.ShowDialog(true))
+				if (paramsWnd.ShowDialog(false, true))
 				{
-					this.AddOffset(paramsWnd.Distance, paramsWnd.Precision);
+					this.AddOffset(paramsWnd.Distance);
 				}
 			}
 		}
@@ -185,30 +201,17 @@ namespace Ellipsoidus
 
 			e.Handled = true;
             var points = (geometry as Polyline).GetPoints();
-            var list = new List<MapPointGraphic>();
+            var list = new List<GeodesicMapPoint>();
 
 			int num = 1;
-			foreach (MapPoint pt in points)
+			foreach (var pt in points)
 			{
                 var idPt = pt.Cast();
 				idPt.Id = num++.ToString();
 				list.Add(idPt);
 			}
-			this.AddSourceLine(list);
+			this.AddSourceLine(list, "PickOnMap");
 			this.HideInfoBox();
-		}
-
-		private async void loadFromFile_Click(object sender, RoutedEventArgs e)
-		{
-            var dlg = new OpenFileDialog();
-            dlg.Filter = "Text files|*.txt;*.nxy";
-
-            if (dlg.ShowDialog() != true)
-                return;
-
-            var points = Utils.LoadFromFile(dlg.FileName);
-            AddSourceLine(points);
-            await MapView.SetViewAsync(this.SourceLine.Extent.Expand(2.0));
 		}
 
 		private void websiteButton_Click(object sender, RoutedEventArgs e)
@@ -228,7 +231,7 @@ namespace Ellipsoidus
             var endPoint = await this.PickPoint();
 
             var offsetParametersWindow = new OffsetParametersWindow();
-			if (offsetParametersWindow.ShowDialog(false))
+			if (offsetParametersWindow.ShowDialog(false, true))
 			{
 				GeodesicParallelLineDeviationsTest test = new GeodesicParallelLineDeviationsTest(startPoint, endPoint, offsetParametersWindow.Distance);
 				test.Layer = this.TestsLayer;
@@ -271,7 +274,7 @@ namespace Ellipsoidus
 			else
 			{
                 var point = await this.PickPoint();
-                var dist = this.SourceLine.GeodesicDistTo(point, 1.0);
+                var dist = this.SourceLine.GeodesicDistTo(point);
 				this.ShowInfoBox(Utils.RoundDist(dist));
 			}
 		}
@@ -306,14 +309,18 @@ namespace Ellipsoidus
 			this.OffsetBuilder = null;
 		}
 
-		private void AddSourceLine(IList<MapPointGraphic> points)
+		private void AddSourceLine(IList<GeodesicMapPoint> points, string origin)
 		{
 			this.ClearToolsResults();
 			this.SourceLineGeodesicLayer.Graphics.Clear();
 			this.SourceLineProjectedLayer.Graphics.Clear();
 
             var projectedLine = new Polyline(points);
-			this.SourceLine = GeodesicPolyline.Create(points.Cast<MapPoint>().ToList());
+            this.SourceLine = GeodesicPolyline.Create(points.Cast<MapPoint>().ToList());
+            foreach (var ln in SourceLine.Lines)
+            {
+                ln.UpdateOrigin(origin);
+            }
 
 			this.SourceLineProjectedLayer.Add(projectedLine, this.srcPrjSymb.DashLine);
 			this.SourceLineProjectedLayer.AddRange(points, this.srcPrjSymb.Point);
@@ -322,15 +329,24 @@ namespace Ellipsoidus
 
 			this.offsetButton.IsEnabled = true;
 			this.bufferButton.IsEnabled = true;
+
+            this.OffsetBuilder = null;
 		}
+
+        private Polygon GetEsriBuffer(double dist, double precision)
+        {
+            if (this.SourceLine == null)
+                return null;
+
+            var srcLn = new Polyline(this.SourceLine.Vertices);
+            return GeometryEngine.GeodesicBuffer(srcLn, dist, LinearUnits.Meters, precision, GeodeticCurveType.Geodesic) as Polygon;
+        }
 
 		private void AddBuffer(double dist, double precision)
 		{
-			if (this.SourceLine != null)
+            this.BufferOutput = GetEsriBuffer(dist, precision);
+            if (this.BufferOutput != null)
 			{
-                var srcLn = new Polyline(this.SourceLine.Vertices);
-				this.BufferOutput = GeometryEngine.GeodesicBuffer(srcLn, dist, LinearUnits.Meters, precision, GeodeticCurveType.Geodesic) as Polygon;
-
                 var points = this.BufferOutput.GetPoints().ToList();
                 var symb = Symbols.Orange2;
 
@@ -340,30 +356,38 @@ namespace Ellipsoidus
 			}
 		}
 
-		private async void AddOffset(double dist, double precision)
+		private async void AddOffset(double dist)
 		{
 			if (this.SourceLine != null)
 			{
-				this.OffsetBuilder = new GeodesicOffsetBuilder(this.SourceLine, dist, precision);
+				this.OffsetBuilder = new GeodesicOffsetBuilder(this.SourceLine, dist);
 				await this.StartProgress(this.OffsetBuilder.BuildAsync(), "Building offset...");
+                this.ShowInfoBox("Offset built in " + this.OffsetBuilder.BuildTime.TotalSeconds.ToString("0") + " sec.");
+
+                if (this.OffsetBuilder.SegmentErrorPoint != null)
+                {
+                    OffsetBuilder.SegmentErrorPoint.Id += " # ERROR";
+                    SourceLineGeodesicLayer.Add(OffsetBuilder.SegmentErrorPoint, Symbols.Black3.Point);
+                    MessageBox.Show("Segment builder error! Balck point added at error location. " + OffsetBuilder.SegmentErrorPoint.Id);
+                }
 
                 var symbols = Symbols.Gray1;
-				foreach (GeodesicLine sax in this.OffsetBuilder.SourceAuxiliaryLines)
+				foreach (var sax in this.OffsetBuilder.SourceAuxiliaryLines)
 				{
 					this.OffsetSourceAuxiliaryLinesLayer.Add(sax, symbols.Line);
 				}
 
 				symbols = Symbols.Magenta1;
-				foreach (Polyline carc in this.OffsetBuilder.CuttedArcs)
+				foreach (var carc in this.OffsetBuilder.CuttedArcs)
 				{
-                    var pts = carc.GetPoints().ToList<MapPoint>();
+                    var pts = carc.GetPoints().ToList();
 					this.OffsetCuttedLinesLayer.Add(carc, symbols.DashLine);
 					this.OffsetCuttedLinesLayer.Add(pts.First<MapPoint>(), symbols.X);
 					this.OffsetCuttedLinesLayer.Add(pts.Last<MapPoint>(), symbols.X);
 				}
 
 				symbols = Symbols.Red1;
-				foreach (Polyline cln in this.OffsetBuilder.CuttedLines)
+				foreach (var cln in this.OffsetBuilder.CuttedLines)
 				{
                     var pts2 = cln.GetPoints();
 					this.OffsetCuttedLinesLayer.Add(cln, symbols.DashLine);
@@ -372,71 +396,143 @@ namespace Ellipsoidus
 				}
 
 				symbols = Symbols.Magenta2;
-				foreach (GeodesicArc arc in this.OffsetBuilder.OffsetArcs)
+				foreach (var arc in this.OffsetBuilder.OffsetArcs)
 				{
                     var gr = this.OffsetResultsLayer.Add(arc, symbols.Line);
 					gr.Attributes["Value"] = arc.Center.Id;
-					this.OffsetResultsLayer.Add(arc.FirstVertex, symbols.Point);
-					this.OffsetResultsLayer.Add(arc.LastVertex, symbols.Point);
+					this.OffsetResultsLayer.Add(arc.StartPoint, symbols.Point);
+					this.OffsetResultsLayer.Add(arc.EndPoint, symbols.Point);
 				}
 
 				symbols = Symbols.Red2;
-				foreach (GeodesicPolyline ln in this.OffsetBuilder.OffsetLines)
+				foreach (var ln in this.OffsetBuilder.OffsetLines)
 				{
 					this.OffsetResultsLayer.Add(ln, symbols.Line);
-					this.OffsetResultsLayer.Add(ln.FirstVertex, symbols.Point);
-					this.OffsetResultsLayer.Add(ln.LastVertex, symbols.Point);
+					this.OffsetResultsLayer.Add(ln.StartPoint, symbols.Point);
+					this.OffsetResultsLayer.Add(ln.EndPoint, symbols.Point);
 				}
 			}
 		}
 
-		private string GetFilePathDlg(string fileName)
+		private string GetFilePathDlg()
 		{
-            var dlg = new SaveFileDialog();
-            dlg.AddExtension = false;
-			dlg.FileName = fileName;
-			dlg.Filter = "File|*.shp;*.txt;*.json";
+            
+            var dlg = new System.Windows.Forms.FolderBrowserDialog();
+            dlg.Description = "Select Shapefiles + MXD output folder";
+            dlg.SelectedPath = this.Settings.ExportOutputDir; 
 
-			if (dlg.ShowDialog() != true)
-                return null;
+            var result = dlg.ShowDialog();
+            if (result == System.Windows.Forms.DialogResult.OK)
+            {
+                this.Settings.ExportOutputDir = dlg.SelectedPath;
+                return dlg.SelectedPath;
+            }
+            return null;
 
-			return Path.ChangeExtension(dlg.FileName, null);
 		}
+
+        private async void loadFromFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog();
+            dlg.Filter = "Text files|*.txt;*.nxy";
+            dlg.InitialDirectory = Path.GetDirectoryName(this.Settings.LoadBaseLineFile);
+            //dlg.FileName = this.Settings.LoadBaseLineFile;
+
+            if (dlg.ShowDialog() != true)
+                return;
+
+            this.Settings.LoadBaseLineFile = dlg.FileName;
+
+            var points = Utils.LoadFromFile(dlg.FileName);
+            AddSourceLine(points, "KeyedIn");
+            await MapView.SetViewAsync(this.SourceLine.Extent.Expand(2.0));
+        }
+
+        private void baseLineSave_Click(object sender, RoutedEventArgs e)
+        {
+			if (this.SourceLine == null)
+			{
+				this.ShowInfoBox("Add base line");
+                return;
+			}
+
+            var dlg = new SaveFileDialog();
+            dlg.Filter = "Shapefiles|*.shp";
+            dlg.AddExtension = true;
+            dlg.InitialDirectory = Path.GetDirectoryName(this.Settings.LoadBaseLineFile);
+            dlg.FileName = Path.GetFileNameWithoutExtension(this.Settings.LoadBaseLineFile) + ".shp";
+
+            if (dlg.ShowDialog() != true)
+                return;
+
+            this.Settings.LoadBaseLineFile = dlg.FileName;
+            var fn = Path.ChangeExtension(dlg.FileName, null);
+
+            Shapefile.SaveLine(this.SourceLine.Vertices, fn + ".shp");
+            Shapefile.SaveLineDensify(this.SourceLine.Lines, fn + "-geodesic.shp");
+            Shapefile.SavePoints(this.SourceLine.Vertices, fn + "-points.shp");
+
+            ShowInfoBox("Exported.");
+        }
+
+        private void CopyWordShp(string destDir)
+        {
+            try
+            {
+                var srcFile = Path.Combine(ExeDir, "ExportTemplate", "shp", "world");
+                var destFile = Path.Combine(destDir, "world");
+
+                if (File.Exists(destFile + ".shp"))
+                    return;
+
+                File.Copy(srcFile + ".dbf", destFile + ".dbf");
+                File.Copy(srcFile + ".prj", destFile + ".prj");
+                File.Copy(srcFile + ".shp", destFile + ".shp");
+                File.Copy(srcFile + ".shpx", destFile + ".shpx");
+                File.Copy(srcFile + ".shx", destFile + ".shx");
+            }
+            catch { }
+        }
+
+        private void ExportOffsetData(string destDir, double maxDev)
+        {
+
+            var shpDir = Path.Combine(destDir, "shp") + Path.DirectorySeparatorChar;
+            Directory.CreateDirectory(shpDir);
+
+            Shapefile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev);
+            Shapefile.SaveLineCombo(this.OffsetBuilder.SourceLine.Lines, shpDir + "base-line.shp", maxDev);
+
+            var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);
+            Shapefile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri-buff.shp", maxDev);
+
+            var srcMxd = Path.Combine(ExeDir, "ExportTemplate", "ellipsoidus.mxd");
+            var destMxd = Path.Combine(destDir, "ellipsoidus.mxd");
+            if (!File.Exists(destMxd))
+                File.Copy(srcMxd, destMxd);
+
+            CopyWordShp(shpDir);
+        }
 
 		private void offsetButtonSave_Click(object sender, RoutedEventArgs e)
 		{
 			if (this.OffsetBuilder == null)
 			{
-				this.ShowInfoBox("Add source line and build offset");
+				this.ShowInfoBox("Add base line and build offset");
+                return;
 			}
-			else
-			{
-				string filePath = this.GetFilePathDlg("offset");
-				if (!string.IsNullOrEmpty(filePath))
-				{
-					Utils.SaveToFile(filePath + "-calculated.txt", this.OffsetBuilder.GetCalculatedPoints(), "; Ellipsoidus - Offset coordinates (calculated)");
-					Utils.SaveToFile(filePath + "-densify.txt", this.OffsetBuilder.GetDensifyPoints(), "; Ellipsoidus - Offset coordinates (all)");
-					Utils.SaveToFile(filePath + "-src-ln.txt", this.OffsetBuilder.SourceLine.DensifyPoints, "; Ellipsoidus - Source line geodesic coordinates");
-				}
-			}
-		}
 
-		private void bufferButtonSave_Click(object sender, RoutedEventArgs e)
-		{
-			if (this.BufferOutput == null)
-			{
-				this.ShowInfoBox("Add source line and build buffer");
-			}
-			else
-			{
-				string filePath = this.GetFilePathDlg("buffer");
-				if (!string.IsNullOrEmpty(filePath))
-				{
-					Utils.SaveToFile(filePath + ".txt", this.BufferOutput.GetPoints(), "; Ellipsoidus - ESRI Buffer coordinates");
-                    var jsonText = this.BufferOutput.ToJson();
-					File.WriteAllText(filePath + ".json", jsonText, Encoding.UTF8);
-				}
-			}
+            // TODO: make one export dialog windw
+            var paramsWnd = new OffsetParametersWindow();
+			if (!paramsWnd.ShowDialog(true, false))
+                return;
+
+			string folderPath = this.GetFilePathDlg();
+            if (string.IsNullOrEmpty(folderPath))
+                return;
+
+            ExportOffsetData(folderPath, paramsWnd.Precision);
+            ShowInfoBox("Exported.");
 		}
     }
 }

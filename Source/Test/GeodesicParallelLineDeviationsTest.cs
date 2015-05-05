@@ -9,15 +9,14 @@ namespace Ellipsoidus
     {
         public GeodesicLine SourceLine;
         public GeodesicLine OffsetLine;
-        private static double OrthoAzimuth = -90.0;
         public double OffsetDist { get; private set; }
 
         public GeodesicParallelLineDeviationsTest(MapPoint startPoint, MapPoint endPoint, double offsetDist)
         {
             this.OffsetDist = offsetDist;
             this.SourceLine = GeodesicLine.Create(startPoint, endPoint);
-            MapPoint offsetStartPt = startPoint.GeodesicMove(this.SourceLine.StartAzimuth + GeodesicParallelLineDeviationsTest.OrthoAzimuth, offsetDist);
-            MapPoint offsetEndPt = endPoint.GeodesicMove(this.SourceLine.EndAzimuth + GeodesicParallelLineDeviationsTest.OrthoAzimuth, offsetDist);
+            MapPoint offsetStartPt = startPoint.GeodesicMove(this.SourceLine.StartAzimuth + Geodesic.OrhtoAzimuth, offsetDist);
+            MapPoint offsetEndPt = endPoint.GeodesicMove(this.SourceLine.EndAzimuth + Geodesic.OrhtoAzimuth, offsetDist);
             this.OffsetLine = GeodesicLine.Create(offsetStartPt, offsetEndPt);
         }
 
@@ -36,7 +35,7 @@ namespace Ellipsoidus
             {
                 var pt = srcLnPoints[i];
                 var ptLn = GeodesicLine.Create(pt, this.SourceLine.EndPoint);
-                var offsetPt = pt.GeodesicMove(ptLn.StartAzimuth + GeodesicParallelLineDeviationsTest.OrthoAzimuth, this.OffsetDist);
+                var offsetPt = pt.GeodesicMove(ptLn.StartAzimuth + Geodesic.OrhtoAzimuth, this.OffsetDist);
                 var near = GeometryEngine.NearestCoordinate(this.OffsetLine, offsetPt);
                 if (near.Distance > maxDeviation)
                 {
@@ -44,12 +43,12 @@ namespace Ellipsoidus
                     maxDevSrcLnPt = pt;
                     maxDevSrcLnOffsetPt = offsetPt;
                     maxDevOffsetLnPt = near.Point;
-                    maxDevAzimuth = ptLn.StartAzimuth + GeodesicParallelLineDeviationsTest.OrthoAzimuth;
+                    maxDevAzimuth = ptLn.StartAzimuth + Geodesic.OrhtoAzimuth;
                 }
             }
 
             var deviationLn = GeodesicLine.Create(maxDevSrcLnOffsetPt, maxDevOffsetLnPt);
-            var sourceLnMidOffset = this.SourceLine.MidPoint.GeodesicMove(this.SourceLine.MidAzimuth + GeodesicParallelLineDeviationsTest.OrthoAzimuth, this.OffsetDist);
+            var sourceLnMidOffset = this.SourceLine.MidPoint.GeodesicMove(this.SourceLine.MidAzimuth + Geodesic.OrhtoAzimuth, this.OffsetDist);
             var geoDevLn = GeodesicLine.Create(sourceLnMidOffset, this.OffsetLine.MidPoint);
 
             var lnSymb = Symbols.Blue2;

@@ -13,5 +13,5 @@ https://github.com/kubaszostak/ellipsoidus/releases
 
 ### Credits
 * Mapping API provided by Esri [ArcGIS Runtime SDK for .NET](https://developers.arcgis.com/net/)
-* [GeographicLib](http://geographiclib.sourceforge.net/) by Charles Karney
-* Easy GIS .NET - [Professional .NET GIS Shapefile Tools](http://www.easygisdotnet.com/)
+* Algorithms for solving geodesic problems provided by [Charles Karney's GeographicLib](http://geographiclib.sourceforge.net/)  
+* Shapefiles support provided by [DotSpatial](http://dotspatial.codeplex.com/)

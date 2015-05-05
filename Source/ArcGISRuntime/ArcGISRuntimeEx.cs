@@ -1,7 +1,9 @@
 ﻿using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Layers;
 using Esri.ArcGISRuntime.Symbology;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 
 
@@ -52,15 +54,16 @@ namespace Esri
             }
         }
 
-        public static void AddPoints(this GraphicsLayer layer, IEnumerable<MapPointGraphic> points, MarkerSymbol symbol = null)
+        public static void AddPoints(this GraphicsLayer layer, IEnumerable<GeodesicMapPoint> points, MarkerSymbol symbol)
         {
-            foreach (MapPointGraphic pt in points)
+            foreach (var pt in points)
             {
+                var graphic = pt.GetGraphic();
                 if (symbol != null)
                 {
-                    pt.Graphic.Symbol = symbol;
+                    graphic.Symbol = symbol;
                 }
-                layer.Graphics.Add(pt.Graphic);
+                layer.Graphics.Add(graphic);
             }
         }
 
@@ -83,6 +86,14 @@ namespace Esri
             return layer.Labeling.IsEnabled;
         }
 
+
+        public static bool IsEqual2d(this MapPoint point, MapPoint other)
+        {
+            var dx = Math.Abs(point.X - other.X);
+            var dy = Math.Abs(point.Y - other.Y);
+            return (dx <= Geodesic.ArcEpsilon * 2.0) && (dy <= Geodesic.ArcEpsilon * 2.0);
+        }
+
         public static IEnumerable<MapPoint> GetPoints(this Polyline ln)
         {
             if (ln.Parts.Count < 1)
@@ -97,6 +108,24 @@ namespace Esri
                 return new MapPoint[0];
             else
                 return plg.Parts[0].GetPoints();
+        }
+
+        public static void UpdateOrigin(this IEnumerable<GeodesicMapPoint> points, string origin)
+        {
+            foreach (var pt in points)
+            {
+                pt.UpdateOrigin(origin);
+            }
+        }
+
+        public static IEnumerable<GeodesicMapPoint> ToGeodesicPoints(this IEnumerable<MapPoint> points)
+        {
+            var res = new List<GeodesicMapPoint>();
+            foreach (var pt in points)
+            {
+                res.Add(pt.Cast());
+            }
+            return res;
         }
     }
 }
