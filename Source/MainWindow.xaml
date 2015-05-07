@@ -15,9 +15,11 @@
                     <esri:ViewpointExtent XMin="12.0" XMax="44.0" YMin="0" YMax="75" SpatialReferenceID="4326" />
                 </esri:Map.InitialViewpoint>
                 <esri:ArcGISTiledMapServiceLayer ID="Basemap" x:Name="BasemapLayer" ServiceUri="http://services.arcgisonline.com/ArcGIS/rest/services/ESRI_StreetMap_World_2D/MapServer" />
+
+                <esri:GraphicsLayer ID="CuttingLineLayer" x:Name="CuttingLineLayer" DisplayName="Cutting line" />
                 <esri:GraphicsLayer ID="TestsLayer" x:Name="TestsLayer" DisplayName="Tests" />
-                <esri:GraphicsLayer ID="SourceLineProjectedLayer" x:Name="SourceLineProjectedLayer" DisplayName="Base Line (projected)" IsVisible="False" />
-                <esri:GraphicsLayer ID="SourceLineGeodesicLayer" x:Name="SourceLineGeodesicLayer" DisplayName="Base Line (geodesic)" />
+                <esri:GraphicsLayer ID="SourceLineProjectedLayer" x:Name="SourceLineProjectedLayer" DisplayName="Base line (projected)" IsVisible="False" />
+                <esri:GraphicsLayer ID="SourceLineGeodesicLayer" x:Name="SourceLineGeodesicLayer" DisplayName="Base line (geodesic)" />
                 <esri:GraphicsLayer ID="BufferLayer" x:Name="BufferLayer" DisplayName="ESRI Buffer" />
                 <esri:GraphicsLayer ID="OffsetSourceAuxiliaryLinesLayer" x:Name="OffsetSourceAuxiliaryLinesLayer" DisplayName="Base Line Auxiliary Lines" />
                 <esri:GraphicsLayer ID="OffsetOutputAuxiliaryLinesLayers" x:Name="OffsetOutputAuxiliaryLinesLayers" DisplayName="Offset Auxiliary Lines" />
@@ -29,7 +31,7 @@
         <Border Name="infoBox" BorderThickness="1" BorderBrush="#FFFF8C00" 
                 MinWidth="200"
                 HorizontalAlignment="Center" VerticalAlignment="Top" 
-                Margin="0,40" Opacity="0.9">
+                Margin="0,40" Padding="16,2" >
             <Border.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.InfoColorKey}}" />
             </Border.Background>
@@ -47,7 +49,7 @@
             </Border.Triggers>
             <TextBlock Name="infoTextBlock" Margin="8,4" HorizontalAlignment="Center">Double click to end line</TextBlock>
         </Border>
-        <Border Name="progressBox" BorderThickness="1" BorderBrush="#FF696969" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,70" Opacity="0.9">
+        <Border Name="progressBox" BorderThickness="1" BorderBrush="#FF696969" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,74" Opacity="0.9">
             <Border.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.InfoColorKey}}" />
             </Border.Background>
@@ -65,16 +67,22 @@
             </Border.Triggers>
             <ProgressBar Name="progressBar" Width="150" Margin="0" Height="20" />
         </Border>
-        <Menu VerticalAlignment="Top">
+        <Menu VerticalAlignment="Top" Name="menuBar">
             <MenuItem Header="Base line" Padding="4">
                 <MenuItem Header="Draw line" Click="addLine_Click" />
                 <MenuItem Header="Load from file..." ToolTip="File format: Id X Y" Click="loadFromFile_Click" />
                 <Separator />
                 <MenuItem Header="Export to Shapefile" Click="baseLineSave_Click" />
             </MenuItem>
-            <MenuItem Header="Geodesic Offset" Padding="4">
-                <MenuItem Name="offsetButton" Header="Generate geodesic offset (Karney/Vincenty)" ToolTip="Offset using Karney's/Vincenty's algorithms" Click="offsetButton_Click" />
-                <MenuItem Name="bufferButton" Header="Generate geodesic buffer (ESRI)" ToolTip="Buffer using ESRI algorithms" Click="bufferButton_Click" />
+            <MenuItem Header="Cutting line" Padding="4" Name="mnuCuttingLine" IsEnabled="False">
+                <MenuItem Header="Draw line" Click="addCuttingLine_Click" />
+                <MenuItem Header="Load from file..." ToolTip="File format: Id X Y" Click="loadCuttingLineFromFile_Click" />
+                <Separator />
+                <MenuItem Header="Clear cutting line" Click="clearCuttingLine_Click" />
+            </MenuItem>
+            <MenuItem Header="Geodesic Offset" Padding="4" Name="mnuGeodesicOffset" IsEnabled="False">
+                <MenuItem Header="Generate geodesic offset (Karney/Vincenty)" ToolTip="Offset using Karney's/Vincenty's algorithms" Click="offsetButton_Click" />
+                <MenuItem Header="Generate geodesic buffer (ESRI)" ToolTip="Buffer using ESRI algorithms" Click="bufferButton_Click" />
                 <Separator />
                 <MenuItem Header="Save results" IsEnabled="False" FontSize="10" />
                 <MenuItem Name="offsetrButtonSave" Header="Export to Shapefiles + MXD" ToolTip="Save ShapeFiles and text files with coordinates" Click="offsetButtonSave_Click" />

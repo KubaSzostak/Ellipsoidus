@@ -55,6 +55,14 @@ namespace Esri
 
             return res;
         }
+
+        public void CopyFrom(GeodesicMapPoint other)
+        {
+            this.Id = other.Id;
+            this.Origin = other.Origin;
+            this.SourceGeometry = other.SourceGeometry;
+            this.SourcePoint = other.SourcePoint;
+        }
     }
 
 

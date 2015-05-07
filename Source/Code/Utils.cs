@@ -5,12 +5,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace System
 {
     public class Utils
     {
+        public static string SecPrecision = "00.00";
+
         private static string TextFilePaht = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Ellipsoidus.txt");
 
         public static void ShowNotepad(IEnumerable<string> lines)
@@ -25,7 +28,20 @@ namespace System
             Process.Start(Utils.TextFilePaht);
         }
 
-        public static string DegToString(double angle)
+        public static string ToDegMinSecString(double angle)
+        {
+            var deg = Math.Floor(angle);
+
+            angle = (angle - deg) * 60; // minutes
+            var min = Math.Floor(angle);
+
+            angle = (angle - min) * 60; // seconds
+            var sec = angle;
+
+            return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(SecPrecision) + '"';
+        }
+
+        public static string ToDegString(double angle)
         {
             return angle.ToString("0.00000000") + "°";
         }
@@ -69,16 +85,16 @@ namespace System
                 id += "  ";
             }
 
-            return id + Utils.DegToString(pt.Y) + "  " + Utils.DegToString(pt.X);
+            return id + Utils.ToDegString(pt.Y) + "  " + Utils.ToDegString(pt.X);
         }
 
         public static string DistToString(GeodesicLine ln)
         {
             var dist = ln.Distance;
             if (dist > 0.1)
-                return ln.Distance.ToString("0.000") + " (" + Utils.DegToString(ln.ArcLength) + ")";
+                return ln.Distance.ToString("0.000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
             else
-                return ln.Distance.ToString("0.0000") + " (" + Utils.DegToString(ln.ArcLength) + ")";
+                return ln.Distance.ToString("0.0000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
         }
 
         public static string RoundDist(double dist)
@@ -158,6 +174,24 @@ namespace System
                 }
             }
             return res;
+        }
+
+        public static void SaveToFile(IEnumerable<GeodesicMapPoint> points, string filePath)
+        {
+            var lines = new List<string>();
+            var i = 0;
+
+            foreach (var pt in points)
+            {
+                i++;
+                var id = pt.Id;
+                if (string.IsNullOrWhiteSpace(id))
+                    id = "#" + i.ToString();
+
+                var ln = id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y).PadLeft(15) + "  " + ToDegMinSecString(pt.X).PadLeft(15);
+                lines.Add(ln);
+            }
+            IO.File.WriteAllLines(filePath, lines, Encoding.UTF8);
         }
     }
 }

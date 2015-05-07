@@ -32,8 +32,8 @@ namespace Ellipsoidus
             base.Add(prefix + "Start point: " + Utils.WgsPointToSTring(ln.StartPoint));
             base.Add(prefix + "End point: " + Utils.WgsPointToSTring(ln.EndPoint));
             base.Add(prefix + "Distance: " + Utils.DistToString(ln));
-            base.Add(prefix + "Start Azimuth: " + Utils.DegToString(ln.StartAzimuth));
-            base.Add(prefix + "End Azimuth: " + Utils.DegToString(ln.EndAzimuth));
+            base.Add(prefix + "Start Azimuth: " + Utils.ToDegString(ln.StartAzimuth));
+            base.Add(prefix + "End Azimuth: " + Utils.ToDegString(ln.EndAzimuth));
             base.Add("");
         }
 

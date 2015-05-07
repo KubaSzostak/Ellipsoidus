@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
@@ -31,11 +32,13 @@ namespace Ellipsoidus
     public partial class MainWindow : Window
     {
 		private static Cursor MapCursor = Cursors.Hand;
-		private Timer hideInfoTimer = new Timer(9000.0);
+		private System.Timers.Timer hideInfoTimer = new System.Timers.Timer(9000.0);
 
-		private GeodesicPolyline SourceLine = null;
+		private GeodesicPolyline BaseLine = null;
 		private Polygon BufferOutput = null;
 		private GeodesicOffsetBuilder OffsetBuilder = null;
+
+        private GeodesicPolyline CuttingLine;
 
 		private Symbols srcGeoSymb = Symbols.Blue3;
 		private Symbols srcPrjSymb = Symbols.Blue2;
@@ -54,7 +57,9 @@ namespace Ellipsoidus
 
 			this.MeasurementsLayer.AddLineLabelling(Symbols.Black2, "Value");
 			this.SourceLineGeodesicLayer.AddPointLabelling(this.srcGeoSymb, "Id");
+
 			this.OffsetResultsLayer.AddLineLabelling(Symbols.Magenta2, "Value");
+            this.OffsetResultsLayer.AddPointLabelling(Symbols.Red1, "Id");
 
 			this.MapView.Cursor = MainWindow.MapCursor;
 
@@ -94,9 +99,12 @@ namespace Ellipsoidus
 
 			this.progressBox.Visibility = Visibility.Visible;
 			this.statusInfo.Content = info;
+            this.menuBar.IsEnabled = false;
+
 			await task;
 			this.progressBox.Visibility = Visibility.Collapsed;
 			this.statusInfo.Content = "";
+            this.menuBar.IsEnabled = true;
 		}
 
 		public static void DoEvents()
@@ -118,7 +126,7 @@ namespace Ellipsoidus
                 {
                     errMsg += "\r\n - Check internet connection.";
                     errMsg += "\r\n\r\n" + "Basemap will be not displayed";
-                    MessageBox.Show(errMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    this.ShowInfoBox(errMsg);
                 }
                 else
                 {
@@ -157,7 +165,7 @@ namespace Ellipsoidus
 		}
 		private void bufferButton_Click(object sender, RoutedEventArgs e)
 		{
-			if (this.SourceLine == null)
+			if (this.BaseLine == null)
 			{
 				this.ShowInfoBox("Add source line");
 			}
@@ -173,7 +181,7 @@ namespace Ellipsoidus
 
 		private void offsetButton_Click(object sender, RoutedEventArgs e)
 		{
-			if (this.SourceLine == null)
+			if (this.BaseLine == null)
 			{
 				this.ShowInfoBox("Add source line");
 			}
@@ -192,26 +200,34 @@ namespace Ellipsoidus
 			this.ClearToolsResults();
 		}
 
-		private async void addLine_Click(object sender, RoutedEventArgs e)
-		{
-			this.ShowInfoBox("Double click to end line");
-			this.MapView.Cursor = Cursors.Cross;
-            var geometry = await this.MapView.Editor.RequestShapeAsync(DrawShape.Polyline, Symbols.Gray1.DashLine, null);
-			this.MapView.Cursor = MainWindow.MapCursor;
 
-			e.Handled = true;
+        public async Task<List<GeodesicMapPoint>> PickLineAsync()
+        {
+            this.ShowInfoBox("Double click to end line");
+            this.MapView.Cursor = Cursors.Cross;
+            var geometry = await this.MapView.Editor.RequestShapeAsync(DrawShape.Polyline, Symbols.Gray1.DashLine, null);
+            this.MapView.Cursor = MainWindow.MapCursor;
+
             var points = (geometry as Polyline).GetPoints();
             var list = new List<GeodesicMapPoint>();
 
-			int num = 1;
-			foreach (var pt in points)
-			{
+            int num = 1;
+            foreach (var pt in points)
+            {
                 var idPt = pt.Cast();
-				idPt.Id = num++.ToString();
-				list.Add(idPt);
-			}
-			this.AddSourceLine(list, "PickOnMap");
-			this.HideInfoBox();
+                idPt.UpdateOrigin("PickOnMap");
+                idPt.Id = num++.ToString();
+                list.Add(idPt);
+            }
+
+            this.HideInfoBox();
+            return list;
+        }
+
+		private async void addLine_Click(object sender, RoutedEventArgs e)
+		{
+            var points = await PickLineAsync();
+			this.AddBaseLine(points, "PickOnMap");
 		}
 
 		private void websiteButton_Click(object sender, RoutedEventArgs e)
@@ -267,14 +283,14 @@ namespace Ellipsoidus
 		}
 		private async void measureGeodesicDistToSrcLn_Click(object sender, RoutedEventArgs e)
 		{
-			if (this.SourceLine == null)
+			if (this.BaseLine == null)
 			{
 				this.ShowInfoBox("Add source line");
 			}
 			else
 			{
                 var point = await this.PickPoint();
-                var dist = this.SourceLine.GeodesicDistTo(point);
+                var dist = this.BaseLine.GeodesicDistTo(point);
 				this.ShowInfoBox(Utils.RoundDist(dist));
 			}
 		}
@@ -309,36 +325,37 @@ namespace Ellipsoidus
 			this.OffsetBuilder = null;
 		}
 
-		private void AddSourceLine(IList<GeodesicMapPoint> points, string origin)
+		private void AddBaseLine(List<GeodesicMapPoint> points, string origin)
 		{
 			this.ClearToolsResults();
 			this.SourceLineGeodesicLayer.Graphics.Clear();
 			this.SourceLineProjectedLayer.Graphics.Clear();
 
             var projectedLine = new Polyline(points);
-            this.SourceLine = GeodesicPolyline.Create(points.Cast<MapPoint>().ToList());
-            foreach (var ln in SourceLine.Lines)
+            this.BaseLine = GeodesicPolyline.Create(points.Cast<MapPoint>().ToList());
+            foreach (var ln in BaseLine.Lines)
             {
                 ln.UpdateOrigin(origin);
             }
 
 			this.SourceLineProjectedLayer.Add(projectedLine, this.srcPrjSymb.DashLine);
 			this.SourceLineProjectedLayer.AddRange(points, this.srcPrjSymb.Point);
-			this.SourceLineGeodesicLayer.Add(this.SourceLine, this.srcGeoSymb.Line);
+			this.SourceLineGeodesicLayer.Add(this.BaseLine, this.srcGeoSymb.Line);
 			this.SourceLineGeodesicLayer.AddPoints(points, this.srcGeoSymb.Point);
 
-			this.offsetButton.IsEnabled = true;
-			this.bufferButton.IsEnabled = true;
+            this.ClearCuttingLine();
+			this.mnuGeodesicOffset.IsEnabled = true;
+            this.mnuCuttingLine.IsEnabled = true;
 
             this.OffsetBuilder = null;
 		}
 
         private Polygon GetEsriBuffer(double dist, double precision)
         {
-            if (this.SourceLine == null)
+            if (this.BaseLine == null)
                 return null;
 
-            var srcLn = new Polyline(this.SourceLine.Vertices);
+            var srcLn = new Polyline(this.BaseLine.Vertices);
             return GeometryEngine.GeodesicBuffer(srcLn, dist, LinearUnits.Meters, precision, GeodeticCurveType.Geodesic) as Polygon;
         }
 
@@ -358,9 +375,14 @@ namespace Ellipsoidus
 
 		private async void AddOffset(double dist)
 		{
-			if (this.SourceLine != null)
+			if (this.BaseLine != null)
 			{
-				this.OffsetBuilder = new GeodesicOffsetBuilder(this.SourceLine, dist);
+                
+                this.OffsetCuttedLinesLayer.Graphics.Clear();
+                this.OffsetResultsLayer.Graphics.Clear();
+                this.OffsetSourceAuxiliaryLinesLayer.Graphics.Clear();
+
+				this.OffsetBuilder = new GeodesicOffsetBuilder(this.BaseLine, dist, this.CuttingLine);
 				await this.StartProgress(this.OffsetBuilder.BuildAsync(), "Building offset...");
                 this.ShowInfoBox("Offset built in " + this.OffsetBuilder.BuildTime.TotalSeconds.ToString("0") + " sec.");
 
@@ -414,7 +436,7 @@ namespace Ellipsoidus
 			}
 		}
 
-		private string GetFilePathDlg()
+		private string GetFolderPathDlg()
 		{
             
             var dlg = new System.Windows.Forms.FolderBrowserDialog();
@@ -431,7 +453,7 @@ namespace Ellipsoidus
 
 		}
 
-        private async void loadFromFile_Click(object sender, RoutedEventArgs e)
+        private List<GeodesicMapPoint> LoadPointsFromFileDialog()
         {
             var dlg = new OpenFileDialog();
             dlg.Filter = "Text files|*.txt;*.nxy";
@@ -439,18 +461,26 @@ namespace Ellipsoidus
             //dlg.FileName = this.Settings.LoadBaseLineFile;
 
             if (dlg.ShowDialog() != true)
-                return;
+                return null;
 
             this.Settings.LoadBaseLineFile = dlg.FileName;
 
-            var points = Utils.LoadFromFile(dlg.FileName);
-            AddSourceLine(points, "KeyedIn");
-            await MapView.SetViewAsync(this.SourceLine.Extent.Expand(2.0));
+            return Utils.LoadFromFile(dlg.FileName); 
+        }
+
+        private async void loadFromFile_Click(object sender, RoutedEventArgs e)
+        {
+            var points = LoadPointsFromFileDialog();
+            if (points == null)
+                return;
+
+            AddBaseLine(points, "KeyedIn");
+            await MapView.SetViewAsync(this.BaseLine.Extent.Expand(2.0));
         }
 
         private void baseLineSave_Click(object sender, RoutedEventArgs e)
         {
-			if (this.SourceLine == null)
+			if (this.BaseLine == null)
 			{
 				this.ShowInfoBox("Add base line");
                 return;
@@ -468,9 +498,9 @@ namespace Ellipsoidus
             this.Settings.LoadBaseLineFile = dlg.FileName;
             var fn = Path.ChangeExtension(dlg.FileName, null);
 
-            Shapefile.SaveLine(this.SourceLine.Vertices, fn + ".shp");
-            Shapefile.SaveLineDensify(this.SourceLine.Lines, fn + "-geodesic.shp");
-            Shapefile.SavePoints(this.SourceLine.Vertices, fn + "-points.shp");
+            ShapeFile.SaveLine(this.BaseLine.Vertices, fn + ".shp");
+            ShapeFile.SaveLineDensify(this.BaseLine.Lines, fn + "-geodesic.shp");
+            ShapeFile.SavePoints(this.BaseLine.Vertices, fn + "-points.shp");
 
             ShowInfoBox("Exported.");
         }
@@ -500,11 +530,19 @@ namespace Ellipsoidus
             var shpDir = Path.Combine(destDir, "shp") + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(shpDir);
 
-            Shapefile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev);
-            Shapefile.SaveLineCombo(this.OffsetBuilder.SourceLine.Lines, shpDir + "base-line.shp", maxDev);
+            var txtDir = Path.Combine(destDir, "txt") + Path.DirectorySeparatorChar;
+            Directory.CreateDirectory(txtDir);
+
+            var points = ShapeFile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev);
+            Utils.SaveToFile(points, txtDir + "offset-points.txt");
+            Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt");
+
+            ShapeFile.SaveLineCombo(this.OffsetBuilder.SourceLine.Lines, shpDir + "base-line.shp", maxDev);
+            Utils.SaveToFile(this.BaseLine.Vertices, txtDir + "base-line.txt");
 
             var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);
-            Shapefile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri-buff.shp", maxDev);
+            ShapeFile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri-buff.shp", maxDev);
+
 
             var srcMxd = Path.Combine(ExeDir, "ExportTemplate", "ellipsoidus.mxd");
             var destMxd = Path.Combine(destDir, "ellipsoidus.mxd");
@@ -514,7 +552,13 @@ namespace Ellipsoidus
             CopyWordShp(shpDir);
         }
 
-		private void offsetButtonSave_Click(object sender, RoutedEventArgs e)
+        public Task ExportOffsetDataAsync(string destDir, double maxDev)
+        {
+            var action = new Action(() => { ExportOffsetData(destDir, maxDev); } );
+            return Task.Run(action, CancellationToken.None);
+        }
+
+		private async void offsetButtonSave_Click(object sender, RoutedEventArgs e)
 		{
 			if (this.OffsetBuilder == null)
 			{
@@ -527,12 +571,62 @@ namespace Ellipsoidus
 			if (!paramsWnd.ShowDialog(true, false))
                 return;
 
-			string folderPath = this.GetFilePathDlg();
+			string folderPath = this.GetFolderPathDlg();
             if (string.IsNullOrEmpty(folderPath))
                 return;
 
-            ExportOffsetData(folderPath, paramsWnd.Precision);
+            await  this.StartProgress(ExportOffsetDataAsync(folderPath, paramsWnd.Precision), "Exporting offset data...");
+            //ExportOffsetData(folderPath, paramsWnd.Precision);
             ShowInfoBox("Exported.");
 		}
+
+        private async void addCuttingLine_Click(object sender, RoutedEventArgs e)
+        {
+            var points = await PickLineAsync();
+            this.AddCuttingLine(points, "PickOnMap");
+        }
+
+        private async void loadCuttingLineFromFile_Click(object sender, RoutedEventArgs e)
+        {
+            var points = LoadPointsFromFileDialog();
+            if (points == null)
+                return;
+
+            AddCuttingLine(points, "KeyedIn");
+            await MapView.SetViewAsync(this.CuttingLine.Extent.Expand(2.0));
+        }
+
+        private void AddCuttingLine(List<GeodesicMapPoint> points, string origin)
+        {
+            if (this.BaseLine == null)
+                return;
+
+            var mapPoints = points.Cast<MapPoint>().ToList();
+
+            this.CuttingLine = GeodesicPolyline.Create(mapPoints);
+
+
+
+            this.CuttingLineLayer.Graphics.Clear();
+            foreach (var ln in CuttingLine.Lines)
+            {
+                ln.UpdateOrigin(origin);
+            }
+
+            //this.CuttingLineLayer.Add(CuttingPolygon, Symbols.Gray1.Fill);
+            this.CuttingLineLayer.Add(CuttingLine, Symbols.Gray3.DotLine);
+            this.CuttingLineLayer.AddPoints(points, Symbols.Gray1.Point);
+        }
+
+        private void ClearCuttingLine()
+        {
+            this.CuttingLineLayer.Graphics.Clear();
+            this.CuttingLine = null;
+        }
+
+        private void clearCuttingLine_Click(object sender, RoutedEventArgs e)
+        {
+            ClearCuttingLine();
+        }
     }
 }

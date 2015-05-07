@@ -40,7 +40,13 @@ namespace Esri
 
         public static Graphic Add(this GraphicsLayer layer, Esri.ArcGISRuntime.Geometry.Geometry geometry, Symbol symbol)
         {
-            var graphic = new Graphic(geometry, symbol);
+            Graphic graphic;
+            if (geometry is GeodesicMapPoint)
+                graphic = (geometry as GeodesicMapPoint).GetGraphic();
+            else
+                graphic = new Graphic(geometry);
+            graphic.Symbol = symbol;
+
             layer.Graphics.Add(graphic);
             return graphic;
         }

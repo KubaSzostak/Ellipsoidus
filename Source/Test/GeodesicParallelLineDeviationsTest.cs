@@ -15,25 +15,23 @@ namespace Ellipsoidus
         {
             this.OffsetDist = offsetDist;
             this.SourceLine = GeodesicLine.Create(startPoint, endPoint);
-            MapPoint offsetStartPt = startPoint.GeodesicMove(this.SourceLine.StartAzimuth + Geodesic.OrhtoAzimuth, offsetDist);
-            MapPoint offsetEndPt = endPoint.GeodesicMove(this.SourceLine.EndAzimuth + Geodesic.OrhtoAzimuth, offsetDist);
-            this.OffsetLine = GeodesicLine.Create(offsetStartPt, offsetEndPt);
+
+            var offsLn = this.SourceLine.Offset(offsetDist);
+            this.OffsetLine = GeodesicLine.Create(offsLn.StartPoint, offsLn.EndPoint);
         }
 
         public override void RunTest()
         {
-
             MapPoint maxDevSrcLnPt = this.SourceLine.StartPoint;
             MapPoint maxDevSrcLnOffsetPt = this.OffsetLine.StartPoint;
             MapPoint maxDevOffsetLnPt = this.OffsetLine.StartPoint;
 
             double maxDevAzimuth = 0.0;
-            double maxDeviation = double.MaxValue;
+            double maxDeviation = double.MinValue;
 
-            var srcLnPoints = this.SourceLine.DensifyPoints;
-            for (int i = 1; i < srcLnPoints.Count - 1; i++)
+            for (int i = 1; i < this.SourceLine.DensifyPoints.Count - 1; i++)
             {
-                var pt = srcLnPoints[i];
+                var pt = this.SourceLine.DensifyPoints[i];
                 var ptLn = GeodesicLine.Create(pt, this.SourceLine.EndPoint);
                 var offsetPt = pt.GeodesicMove(ptLn.StartAzimuth + Geodesic.OrhtoAzimuth, this.OffsetDist);
                 var near = GeometryEngine.NearestCoordinate(this.OffsetLine, offsetPt);
@@ -82,7 +80,7 @@ namespace Ellipsoidus
             this.Raport.AddLineInfo(this.SourceLine, "SourceLine");
             this.Raport.AddLineInfo(this.OffsetLine, "OffsetLine");
             this.Raport.AddPoint(maxDevSrcLnPt, "Point on SourceLine");
-            this.Raport.Add("Orhto-Azimuth on SourceLine: " + Utils.DegToString(maxDevAzimuth));
+            this.Raport.Add("Orhto-Azimuth on SourceLine: " + Utils.ToDegString(maxDevAzimuth));
             this.Raport.Add("Offset distance: " + this.OffsetDist.ToString("0.000"));
             this.Raport.AddLn();
             this.Raport.AddPoint(maxDevSrcLnOffsetPt, "Orthogonal offset from SourceLine");

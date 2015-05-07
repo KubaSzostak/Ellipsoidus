@@ -162,7 +162,7 @@ namespace Esri
 
             // Difference between geodesic straight line (1km) and parallel line (at offset 12M) is 0.1mm
             // But cutting projected lines (1km) causes about 50mm deviations
-            double densifyDist = 100.0; 
+            double densifyDist = 200.0; 
 
             var points = GeodesicLine.GetDensifyPoints(start.Cast(), end.Cast(), geoData.azi1, geoData.s12, densifyDist);
             return new GeodesicLine(geoData, points);
@@ -233,7 +233,17 @@ namespace Esri
 
         public GeodesicOffsetLine Offset(double offsetDist)
         {
-            return GeodesicOffsetLine.Create(this, offsetDist);
+            var res = GeodesicOffsetLine.Create(this, offsetDist);
+
+            res.UpdateOrigin("Offset");
+
+            res.StartPoint.SourceGeometry = this;
+            res.StartPoint.SourcePoint = this.StartPoint;
+
+            res.EndPoint.SourceGeometry = this;
+            res.EndPoint.SourcePoint = this.EndPoint;
+
+            return res;
         }
 
         public MapPoint PointOnLine(double dist)
@@ -296,15 +306,37 @@ namespace Esri
 	    {
             this.SourceLine = sourceLn;
             this.OffsetDist = offsetDist;
+
+            var isEven = (points.Count % 2) == 0; // l.parzysta
+            if (isEven)
+            {
+                var midLeft = points.Count / 2 - 1;
+                var midRight = midLeft + 1;
+                var x = (points[midLeft].X + points[midRight].X) / 2.0;
+                var y = (points[midLeft].Y + points[midRight].Y) / 2.0;
+                //Trace.WriteLine(points.Count.ToString() + " -> " + midLeft.ToString() + ", " + midRight.ToString());
+                this.MidPoint = new MapPoint(x, y, points[midLeft].SpatialReference);
+            }
+            else
+            {
+                var midIndex = points.Count / 2;
+                //Trace.WriteLine(points.Count.ToString() + " -> " + midIndex.ToString());
+                this.MidPoint = points[midIndex];
+            }
 	    }
 
         public GeodesicLine SourceLine { get; private set; }
         public double OffsetDist { get; private set; }
+        public MapPoint MidPoint { get; private set; }
 
         public static GeodesicOffsetLine Create(GeodesicLine sourceLn, double offsetDist)
         {
             var points = GetProjectionDensifyPoints(sourceLn, offsetDist);
-            return new GeodesicOffsetLine(points, sourceLn, offsetDist);
+            var res = new GeodesicOffsetLine(points, sourceLn, offsetDist);
+            res.StartPoint.Id = sourceLn.StartPoint.Id;
+            res.EndPoint.Id = sourceLn.EndPoint.Id;
+
+            return res;
         }
 
         private static List<MapPoint> GetProjectionDensifyPoints(GeodesicLine sourceLn, double offsetDist)
@@ -390,6 +422,14 @@ namespace Esri
                     if (cutPts.Count > 1)
                     {
                         var resLn = new GeodesicOffsetLine(cutPts, this.SourceLine, this.OffsetDist);
+
+                        if (resLn.StartPoint.IsEqual2d(this.StartPoint))
+                            resLn.StartPoint.CopyFrom(this.StartPoint);
+
+                        if (resLn.EndPoint.IsEqual2d(this.EndPoint))
+                            resLn.EndPoint.CopyFrom(this.EndPoint);
+
+                        resLn.UpdateOrigin("Cut");
                         res.Add(resLn);
                     }
                 }
@@ -683,8 +723,9 @@ namespace Esri
                 var densifyPoints = segm.GetGeodesicDensifyPoints(maxDeviation);
                 points.AddRange(densifyPoints);
             }
-            var lastSegm = segments.Last();
-            points.Add(lastSegm.EndPoint);
+            var lastSegm = segments.LastOrDefault();
+            if (lastSegm != null)
+                points.Add(lastSegm.EndPoint);
 
             return points;
         }
@@ -713,8 +754,9 @@ namespace Esri
             {
                 vertices.Add(segm.StartPoint);
             }
-            var lastSegm = segments.Last();
-            vertices.Add(lastSegm.EndPoint);
+            var lastSegm = segments.LastOrDefault();
+            if (lastSegm != null)
+                vertices.Add(lastSegm.EndPoint);
 
             return vertices;
         }

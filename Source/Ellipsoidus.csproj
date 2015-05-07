@@ -79,7 +79,7 @@
     <Compile Include="Code\Geodesic.cs" />
     <Compile Include="Code\GeodesicOffsetBuilder.cs" />
     <Compile Include="Code\RaportText.cs" />
-    <Compile Include="Code\Shapefile.cs" />
+    <Compile Include="Code\ShapeFile.cs" />
     <Compile Include="Code\Utils.cs" />
     <Compile Include="Test\GeodesicParallelLineDeviationsTest.cs" />
     <Compile Include="Test\TestBase.cs" />
@@ -151,11 +151,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SampleData\de-base-line.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\GeographicLib\GeographicLib.csproj">
       <Project>{4b7604f5-cfb1-4d46-b0fd-fb00f3be7238}</Project>
       <Name>GeographicLib</Name>
@@ -165,15 +160,7 @@
     <Resource Include="Images\globe.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SampleData\pl-base-line.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Images\globe.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="SampleData\pl-eez.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\ESRI\ArcGISRuntimeSDKNET10.2.5@InstallDir)ideintegration\ArcGISRuntime.targets" Condition="Exists('$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\ESRI\ArcGISRuntimeSDKNET10.2.5@InstallDir)ideintegration\ArcGISRuntime.targets')" />
