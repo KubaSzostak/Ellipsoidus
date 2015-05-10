@@ -192,12 +192,6 @@
   <ItemGroup>
     <Resource Include="Images\globe.png" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Docs\apps\arcgis+geodesic.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Docs\apps\arcgis-geodesic-measure.png" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\ESRI\ArcGISRuntimeSDKNET10.2.5@InstallDir)ideintegration\ArcGISRuntime.targets" Condition="Exists('$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\ESRI\ArcGISRuntimeSDKNET10.2.5@InstallDir)ideintegration\ArcGISRuntime.targets')" />
   <Target Name="ESRI_ArcGISRuntime_Deployment_ErrorIfTargetsMissing" BeforeTargets="PrepareForBuild;PrepareForClean">
