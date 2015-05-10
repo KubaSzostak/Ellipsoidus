@@ -101,7 +101,17 @@ namespace Ellipsoidus
 			this.statusInfo.Content = info;
             this.menuBar.IsEnabled = false;
 
-			await task;
+            try
+            {
+			    await task;
+            }
+            catch (Exception ex)
+            {
+                var msg = ex.Message;
+                if (ex.InnerException != null)
+                    msg += "\r\n" + ex.InnerException.Message;
+                MessageBox.Show(msg, "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
 			this.progressBox.Visibility = Visibility.Collapsed;
 			this.statusInfo.Content = "";
             this.menuBar.IsEnabled = true;

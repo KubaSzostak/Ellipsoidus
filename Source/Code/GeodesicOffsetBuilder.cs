@@ -233,14 +233,31 @@ namespace Esri
         public GeodesicOffsetLine CutOutLine( GeodesicOffsetLine ln, GeodesicOffsetLine cutter)
         {
             var cutRes = ln.Cut(cutter);
+            
+            for (int i = cutRes.Count - 1; i >= 0; i--)
+            {
+                if (cutRes[i].Length < NETGeographicLib.GeodesicUtils.DistanceEpsilon * 0.1)
+                    cutRes.RemoveAt(i);
+            }
 
             if (cutRes.Count > 2)
             {
-                throw new Exception("ERROR: " + base.GetType().Name + ".CutLines() inconsistent result");
+                var resInfo = "\r\n";
+                foreach (var cr in cutRes)
+                {
+                    resInfo += "\r\n" + cr.ToString() + ", Lenght: " + cr.Length.ToString("0.0000");
+                }
+                throw new Exception("ERROR: " + base.GetType().Name + ".CutLines() inconsistent result" + resInfo);
+            }
+            if (cutRes.Count < 1)
+            {
+                var cutRes2 = ln.Cut(cutter);
+                Trace.Write(cutRes2);
+                return ln;
             }
             if (cutRes.Count < 2)
             {
-                return ln;
+                return cutRes[0];
             }
 
             // cutRes.Count == 2

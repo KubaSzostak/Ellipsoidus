@@ -100,11 +100,11 @@ namespace System
 
         public static string DistToString(GeodesicLineSegment ln)
         {
-            var dist = ln.Distance;
+            var dist = ln.Length;
             if (dist > 0.1)
-                return ln.Distance.ToString("0.000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
+                return ln.Length.ToString("0.000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
             else
-                return ln.Distance.ToString("0.0000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
+                return ln.Length.ToString("0.0000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
         }
 
         public static string RoundDist(double dist)

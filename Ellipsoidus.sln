@@ -25,9 +25,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SampleData", "SampleData", 
 		SampleData\pl-eez.txt = SampleData\pl-eez.txt
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NETGeographic", "GeographicLib\windows\NETGeographic-vc13.vcxproj", "{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Geographic", "GeographicLib\windows\Geographic-vc13n.vcxproj", "{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeographicLib", "GeographicLib", "{31E82782-6F9F-43DB-BF6A-F134F19A2ABA}"
+	ProjectSection(SolutionItems) = preProject
+		GeographicLib\README.md = GeographicLib\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,42 +60,6 @@ Global
 		{6B694B40-9261-4E39-90B3-0BD128EE15FE}.Release|x64.ActiveCfg = Release|x64
 		{6B694B40-9261-4E39-90B3-0BD128EE15FE}.Release|x86.ActiveCfg = Release|x86
 		{6B694B40-9261-4E39-90B3-0BD128EE15FE}.Release|x86.Build.0 = Release|x86
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|Win32.Build.0 = Debug|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|x64.ActiveCfg = Debug|x64
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|x64.Build.0 = Debug|x64
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|x86.ActiveCfg = Debug|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Debug|x86.Build.0 = Debug|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|Any CPU.ActiveCfg = Release|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|Win32.ActiveCfg = Release|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|Win32.Build.0 = Release|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|x64.ActiveCfg = Release|x64
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|x64.Build.0 = Release|x64
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|x86.ActiveCfg = Release|Win32
-		{BC1ADBEC-537D-487E-AF21-8B7025AAF46D}.Release|x86.Build.0 = Release|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|Win32.ActiveCfg = Debug|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|Win32.Build.0 = Debug|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|x64.ActiveCfg = Debug|x64
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|x64.Build.0 = Debug|x64
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|x86.ActiveCfg = Debug|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Debug|x86.Build.0 = Debug|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|Any CPU.ActiveCfg = Release|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|Win32.ActiveCfg = Release|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|Win32.Build.0 = Release|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|x64.ActiveCfg = Release|x64
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|x64.Build.0 = Release|x64
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|x86.ActiveCfg = Release|Win32
-		{4CFBCD6C-956C-42BC-A863-3C60F3ED9CC1}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -102,5 +67,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{34135C73-922C-4C6E-BB21-397297D24A9B} = {F4C7BCC4-FFA3-4449-900C-0E3CB964064C}
 		{0BD9B18E-CD79-4BB9-9877-A9D05E1D5782} = {F4C7BCC4-FFA3-4449-900C-0E3CB964064C}
+		{31E82782-6F9F-43DB-BF6A-F134F19A2ABA} = {F4C7BCC4-FFA3-4449-900C-0E3CB964064C}
 	EndGlobalSection
 EndGlobal

@@ -100,7 +100,7 @@ namespace Esri
         public double StartAzimuth { get; private set; }
         public double EndAzimuth { get; private set; }
 
-        public readonly double Distance;
+        public readonly double Length;
         public readonly double ArcLength;
 
         private NETGeographicLib.GeodesicLineSegment Line;
@@ -110,7 +110,7 @@ namespace Esri
         {
             this.Line = ln;
 
-            this.Distance = ln.Dist12;
+            this.Length = ln.Dist12;
             this.ArcLength = ln.Arc12;
 
             this.StartAzimuth = ln.Azi1;
@@ -227,11 +227,13 @@ namespace Esri
                 //Trace.WriteLine(points.Count.ToString() + " -> " + midIndex.ToString());
                 this.MidPoint = points[midIndex];
             }
+            this.Length = GeometryEngine.Length(this);
 	    }
 
         public GeodesicLineSegment SourceLine { get; private set; }
         public double OffsetDist { get; private set; }
         public MapPoint MidPoint { get; private set; }
+        public double Length { get; private set; }
 
         public static GeodesicOffsetLine Create(GeodesicLineSegment sourceLn, double offsetDist)
         {
