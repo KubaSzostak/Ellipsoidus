@@ -36,6 +36,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="apps\arcgis+geodesic.md" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
