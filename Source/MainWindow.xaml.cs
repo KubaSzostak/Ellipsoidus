@@ -650,37 +650,37 @@ namespace Ellipsoidus
             ClearCuttingLine();
         }
 
-        private string GetDistToBaseLineText(string ptId, double dist, double devDist)
-        {
-            return (ptId + ": ").PadLeft(16) + "  " + dist.ToString("0.000").PadLeft(8) + "  (" + (devDist - dist).ToString("0.000") + ")";
-        }
-
-        private void GenerateDistToBaseLineRaport(IEnumerable<MapPoint> points, string fileName)
+        private void GenerateDistToBaseLineRaport(IEnumerable<GeodesicMapPoint> points, string fileName)
         {
             var devList = new List<double>();
             double devDist = 22224.0;
 
             var rap = new RaportText();
-            var pln = GeodesicPolyline.Create(points.Cast<MapPoint>().ToList());
+            var fnShp = Path.ChangeExtension(fileName, null);
 
-            foreach (var ln in pln.Lines)
+            using (var shp = ShapeFile.NewLineShapefile())
             {
-                rap.AddLineInfo(ln);
+                foreach (var pt in points)
+                {
 
-                var sdist = BaseLine.GeodesicDistTo(ln.StartPoint);
-                var mdist = BaseLine.GeodesicDistTo(ln.MidPoint);
-                var edist = BaseLine.GeodesicDistTo(ln.EndPoint);
+                    var near = BaseLine.NearestCoordinate(pt);
+                    var gln = GeodesicLineSegment.Create(pt, near.Point);
+                    var dev = near.Distance - devDist;
 
-                rap.Add("Geodesic distance:");
-                rap.Add(GetDistToBaseLineText(ln.StartPoint.Id, sdist, devDist));
-                rap.Add(GetDistToBaseLineText(ln.MidPoint.Id, mdist, devDist));
-                rap.Add(GetDistToBaseLineText(ln.EndPoint.Id, sdist, devDist));
+                    rap.AddLineInfo(gln);
+                    rap.Add("Deviation from "+devDist.ToString()+":");
+                    var lnDevText = dev.ToString("0.000").PadLeft(15);
+                    rap.Add(lnDevText);
 
-                devList.Add(devDist - sdist);
-                devList.Add(devDist - sdist);
-                devList.Add(devDist - sdist);
+                    devList.Add(dev);
 
-                rap.AddLn();
+                    rap.AddLn();
+
+
+                    shp.AddLine(pt, near.Point, dev, near.Distance);
+                }
+
+                shp.SaveAs(fnShp+".shp", true);
             }
 
             rap.AddLn();
@@ -688,10 +688,14 @@ namespace Ellipsoidus
             rap.Add("Max deviation: " + devList.Max().ToString("0.000"));
             rap.Add("Min deviation: " + devList.Min().ToString("0.000"));
 
+            ShapeFile.SavePoints(points, fnShp + "-points.shp");
+
             rap.SaveToFile(fileName);
+
+
         }
         
-        private Task GenerateDistToBaseLineRaportAsync(IEnumerable<MapPoint> points, string fileName)
+        private Task GenerateDistToBaseLineRaportAsync(IEnumerable<GeodesicMapPoint> points, string fileName)
         {
             var action = new Action(() => { GenerateDistToBaseLineRaport(points, fileName); });
             return Task.Run(action, CancellationToken.None);

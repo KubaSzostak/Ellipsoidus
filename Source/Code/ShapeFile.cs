@@ -53,17 +53,7 @@ namespace Esri
             } 
         }
 
-        private static LineString GetLineStringFeature(IEnumerable<Esri.ArcGISRuntime.Geometry.MapPoint> points)
-        {
-            List<Coordinate> vertices = new List<Coordinate>();
-            foreach (var pt in points)
-            {
-                vertices.Add(new Coordinate(pt.X, pt.Y));
-            }
-            return new LineString(vertices);
-        }
-
-        private static LineShapefile NewLineShapefile()
+        public static LineShapefile NewLineShapefile()
         {
             var shp = new LineShapefile();
 
@@ -73,6 +63,8 @@ namespace Esri
             shp.DataTable.Columns.Add(new DataColumn("src_point", typeof(string)));
             shp.DataTable.Columns.Add(new DataColumn("origin", typeof(string)));
             shp.DataTable.Columns.Add(new DataColumn("max_dev", typeof(double)));
+            shp.DataTable.Columns.Add(new DataColumn("deviation", typeof(double)));
+            shp.DataTable.Columns.Add(new DataColumn("geo_len", typeof(double)));
 
             return shp;
         }
@@ -83,7 +75,7 @@ namespace Esri
             {
                 foreach (var segm in segments)
                 {
-                    var geom = GetLineStringFeature(segm.DensifyPoints);
+                    var geom = segm.DensifyPoints.GetLineStringFeature();
                     var feature = shp.AddFeature(geom);
 
                     if (segm is GeodesicOffsetLine)
@@ -107,7 +99,7 @@ namespace Esri
             using (var shp = NewLineShapefile())
             {
                 var points = segments.GetGeodesicDensifyPoints();
-                var geom = GetLineStringFeature(points);
+                var geom = points.GetLineStringFeature();
                 var feature = shp.AddFeature(geom);
 
                 feature.DataRow["max_dev"] = 0.000;
@@ -122,7 +114,7 @@ namespace Esri
             using (var shp = NewLineShapefile())
             {
                 var points = segments.GetGeodesicDensifyPoints(maxDeviation);
-                var geom = GetLineStringFeature(points);
+                var geom = points.GetLineStringFeature();
                 var feature = shp.AddFeature(geom);
 
                 feature.DataRow["max_dev"] = maxDeviation;
@@ -136,7 +128,7 @@ namespace Esri
         {
             using (var shp = NewLineShapefile())
             {
-                var geom = GetLineStringFeature(points);
+                var geom = points.GetLineStringFeature();
                 var feature = shp.AddFeature(geom);
                 
                 shp.SaveAs(filePath, true);
@@ -169,7 +161,7 @@ namespace Esri
             using (var shp = NewLineShapefile())
             {
                 points.Add(points[0]);
-                var geom = GetLineStringFeature(points);
+                var geom = points.GetLineStringFeature();
                 var feature = shp.AddFeature(geom);
 
                 feature.DataRow["max_dev"] = maxDeviation;
@@ -183,5 +175,29 @@ namespace Esri
 
     }
 
+    public static class ShapeFileEx
+    {
+
+
+        public static LineString GetLineStringFeature(this IEnumerable<Esri.ArcGISRuntime.Geometry.MapPoint> points)
+        {
+            List<Coordinate> vertices = new List<Coordinate>();
+            foreach (var pt in points)
+            {
+                vertices.Add(new Coordinate(pt.X, pt.Y));
+            }
+            return new LineString(vertices);
+        }
+
+        public static void AddLine(this LineShapefile shp, Esri.ArcGISRuntime.Geometry.MapPoint start, Esri.ArcGISRuntime.Geometry.MapPoint end, double deviation, double geoLen)
+        {
+            var points = new Esri.ArcGISRuntime.Geometry.MapPoint[] { start, end };
+            var geom = points.GetLineStringFeature();
+            var feature = shp.AddFeature(geom);
+
+            feature.DataRow["deviation"] = deviation;
+            feature.DataRow["geo_len"] = geoLen;
+        }
+    }
 
 }

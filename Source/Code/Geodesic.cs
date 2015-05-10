@@ -100,8 +100,8 @@ namespace Esri
         public double StartAzimuth { get; private set; }
         public double EndAzimuth { get; private set; }
 
-        public double Distance { get; private set; }
-        public double ArcLength { get; private set; }
+        public readonly double Distance;
+        public readonly double ArcLength;
 
         private NETGeographicLib.GeodesicLineSegment Line;
 
@@ -186,7 +186,7 @@ namespace Esri
             var res = new GeodesicProximity();
             res.Line = this;
             res.Point = this.GetSegmentPoint(gpt.ToMapPoint());
-            res.Line.Distance = dist;
+            res.Distance = dist;
 
             return res;
         }
@@ -399,6 +399,20 @@ namespace Esri
             {
                 double lnDist = ln.GeodesicDistTo(point);
                 res = Math.Min(res, lnDist);
+            }
+            return res;
+        }
+
+        public GeodesicProximity NearestCoordinate(MapPoint point)
+        {
+            var res = new GeodesicProximity();
+            res.Distance = double.MaxValue;
+
+            foreach (var ln in this.Lines)
+            {
+                var near = ln.NearestCoordinate(point);
+                if (near.Distance < res.Distance)
+                    res = near;
             }
             return res;
         }
