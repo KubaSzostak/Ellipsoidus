@@ -13,5 +13,5 @@ ArcGIS The [Measure tool](http://help.arcgis.com/en/arcgisdesktop/10.0/help/inde
 ArcMap offers also [Copying parallel line](http://resources.arcgis.com/en/help/main/10.1/index.html#//01m700000028000000) tool. It allow  You to specify the method for how corners are created:
 * The beveled option adds a line segment to create a beveled corner. 
 * The mitered option extends line segments until they intersect. 
-* The rounded option adds a curved segment at the corner.
+* The rounded option adds a curved segment at the corner.  
 ![Copying parallel](http://resources.arcgis.com/en/help/main/10.1/01m7/GUID-F9F3DC76-F2AB-474C-B565-34818001DDEE-web.gif)
