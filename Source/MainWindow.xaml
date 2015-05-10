@@ -18,6 +18,7 @@
 
                 <esri:GraphicsLayer ID="CuttingLineLayer" x:Name="CuttingLineLayer" DisplayName="Cutting line" />
                 <esri:GraphicsLayer ID="TestsLayer" x:Name="TestsLayer" DisplayName="Tests" />
+                <esri:GraphicsLayer ID="DensifyLayer" x:Name="DensifyLayer" DisplayName="Densify points" IsVisible="True" />
                 <esri:GraphicsLayer ID="SourceLineProjectedLayer" x:Name="SourceLineProjectedLayer" DisplayName="Base line (projected)" IsVisible="False" />
                 <esri:GraphicsLayer ID="SourceLineGeodesicLayer" x:Name="SourceLineGeodesicLayer" DisplayName="Base line (geodesic)" />
                 <esri:GraphicsLayer ID="BufferLayer" x:Name="BufferLayer" DisplayName="ESRI Buffer" />
@@ -67,40 +68,51 @@
             </Border.Triggers>
             <ProgressBar Name="progressBar" Width="150" Margin="0" Height="20" />
         </Border>
+        
         <Menu VerticalAlignment="Top" Name="menuBar">
+            
             <MenuItem Header="Base line" Padding="4">
                 <MenuItem Header="Draw line" Click="addLine_Click" />
                 <MenuItem Header="Load from file..." ToolTip="File format: Id X Y" Click="loadFromFile_Click" />
                 <Separator />
                 <MenuItem Header="Export to Shapefile" Click="baseLineSave_Click" />
             </MenuItem>
+            
             <MenuItem Header="Cutting line" Padding="4" Name="mnuCuttingLine" IsEnabled="False">
                 <MenuItem Header="Draw line" Click="addCuttingLine_Click" />
                 <MenuItem Header="Load from file..." ToolTip="File format: Id X Y" Click="loadCuttingLineFromFile_Click" />
                 <Separator />
                 <MenuItem Header="Clear cutting line" Click="clearCuttingLine_Click" />
             </MenuItem>
+            
             <MenuItem Header="Geodesic Offset" Padding="4" Name="mnuGeodesicOffset" IsEnabled="False">
-                <MenuItem Header="Generate geodesic offset (Karney/Vincenty)" ToolTip="Offset using Karney's/Vincenty's algorithms" Click="offsetButton_Click" />
-                <MenuItem Header="Generate geodesic buffer (ESRI)" ToolTip="Buffer using ESRI algorithms" Click="bufferButton_Click" />
+                <MenuItem Header="Ellipsoidus (Karney/Vincenty)" IsEnabled="False" FontSize="10" />
+                <MenuItem Header="Generate geodesic offset" ToolTip="Offset using Karney's/Vincenty's algorithms" Click="offsetButton_Click" />
+                <Separator />
+                <MenuItem Header="ESRI buffer" IsEnabled="False" FontSize="10" />
+                <MenuItem Header="Generate geodesic buffer" ToolTip="Buffer using ESRI algorithms" Click="bufferButton_Click" />
                 <Separator />
                 <MenuItem Header="Save results" IsEnabled="False" FontSize="10" />
                 <MenuItem Name="offsetrButtonSave" Header="Export to Shapefiles + MXD" ToolTip="Save ShapeFiles and text files with coordinates" Click="offsetButtonSave_Click" />
                 <Separator />
                 <MenuItem Header="Clear results" Click="clearToolsResultsButton_Click" />
             </MenuItem>
+
             <MenuItem Header="Tests">
                 <MenuItem Header="Geodesic line -  parallel line" Click="deviationsGeodesicParallelLineButton_Click" />
+                <MenuItem Header="Distance to base line from file..." Click="distToBaseLineFile_Click" />
+
                 <Separator />
                 <MenuItem Header="Clear tests" Click="clearTests_Click" />
             </MenuItem>
+            
             <MenuItem Header="Measure">
                 <MenuItem Header="Geodesic distance between two points" Click="measureGeodesicDist_Click" />
-                <Separator />
                 <MenuItem Header="Geodesic distance to base line" Click="measureGeodesicDistToSrcLn_Click" />
                 <Separator />
                 <MenuItem Header="Clear measurements" Click="clearMeasurements_Click" />
             </MenuItem>
+            
             <MenuItem Header="Layers" Padding="4">
                 <CheckBox Content="{Binding DisplayName, ElementName=SourceLineGeodesicLayer}" IsChecked="{Binding IsVisible, ElementName=SourceLineGeodesicLayer}" />
                 <CheckBox Content="{Binding DisplayName, ElementName=SourceLineProjectedLayer}" IsChecked="{Binding IsVisible, ElementName=SourceLineProjectedLayer}" />
@@ -116,8 +128,11 @@
                 <CheckBox Content="{Binding DisplayName, ElementName=TestsLayer}" IsChecked="{Binding IsVisible, ElementName=TestsLayer}" />
                 <CheckBox Content="{Binding DisplayName, ElementName=MeasurementsLayer}" IsChecked="{Binding IsVisible, ElementName=MeasurementsLayer}" />
             </MenuItem>
+            
             <Separator />
+
             <MenuItem Header="Info" Padding="4">
+                <MenuItem Header="kuba.szostak@gmail.com" IsEnabled="False" FontSize="10" />
                 <MenuItem Header="Ellipsoidus website" Tag="http://github.com/kubaszostak/ellipsoidus/" Click="websiteButton_Click" />
                 <Separator />
                 <MenuItem Header="Credits" IsEnabled="False" FontSize="10" />
@@ -126,6 +141,7 @@
                 <MenuItem Header="DotSpatial (Shapefile Tools)" Tag="http://dotspatial.codeplex.com/"  Click="websiteButton_Click" />
             </MenuItem>
         </Menu>
+        
         <StatusBar Height="22" VerticalAlignment="Bottom">
             <StatusBarItem MinWidth="120">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

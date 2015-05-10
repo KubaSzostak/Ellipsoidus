@@ -14,8 +14,8 @@ namespace Esri
         public readonly List<GeodesicMapPoint> OffsetVertices = new List<GeodesicMapPoint>();
         public readonly List<GeodesicMapPoint> OffsetDensifyPoints = new List<GeodesicMapPoint>();
 
-        public readonly List<GeodesicLine> SourceAuxiliaryLines = new List<GeodesicLine>();
-        public readonly List<GeodesicLine> OutputAuxiliaryLines = new List<GeodesicLine>();
+        public readonly List<GeodesicLineSegment> SourceAuxiliaryLines = new List<GeodesicLineSegment>();
+        public readonly List<GeodesicLineSegment> OutputAuxiliaryLines = new List<GeodesicLineSegment>();
 
         public readonly List<GeodesicSegment> CuttedLines = new List<GeodesicSegment>();
         public readonly List<GeodesicSegment> CuttedArcs = new List<GeodesicSegment>();
@@ -81,7 +81,7 @@ namespace Esri
 
         public bool IsInside(params MapPoint[] points)
         {
-            var minBufferDist = this.BufferDist - Geodesic.DistanceEpsilon * 2.0;
+            var minBufferDist = this.BufferDist - NETGeographicLib.GeodesicUtils.DistanceEpsilon * 20.0;  // Probably ArcGIS limitation to 2mm
             foreach (var pt in points)
             {
                 var dist = this.SourceLine.GeodesicDistTo(pt);
@@ -155,7 +155,7 @@ namespace Esri
             }
         }
 
-        private GeodesicArc BuildArc(GeodesicLine prevLn, GeodesicLine ln, double dist)
+        private GeodesicArc BuildArc(GeodesicLineSegment prevLn, GeodesicLineSegment ln, double dist)
         {
             GeodesicArc arc = null;
             if (prevLn == null)
@@ -192,7 +192,7 @@ namespace Esri
 
         private void BuildLinesAndArcs(double dist)
         {
-            GeodesicLine prevLn = null;
+            GeodesicLineSegment prevLn = null;
             this.OffsetLines.Clear();
             this.OffsetArcs.Clear();
 
@@ -223,7 +223,7 @@ namespace Esri
             this.OffsetArcs.Add(lastArc);
         }
 
-        private double GetMinDist(GeodesicLine srcLn, GeodesicOffsetLine ln)
+        private double GetMinDist(GeodesicLineSegment srcLn, GeodesicOffsetLine ln)
         {
             var spDist = srcLn.GeodesicDistTo(ln.StartPoint);
             var epDist = srcLn.GeodesicDistTo(ln.EndPoint);
@@ -384,7 +384,7 @@ namespace Esri
 
         private void AddAuxiliary(MapPoint p1, MapPoint p2)
         {
-            var ln = GeodesicLine.Create(p1, p2);
+            var ln = GeodesicLineSegment.Create(p1, p2);
             this.SourceAuxiliaryLines.Add(ln);
         }
 
@@ -405,7 +405,7 @@ namespace Esri
             if (this.CuttingLine == null)
                 return;
 
-
+            var removedSegments = new List<GeodesicSegment>();
             var linesInside = new List<GeodesicOffsetLine>();
             var arcsInside = new List<GeodesicArc>();
             foreach (var segm in this.OffsetSegments)
@@ -421,6 +421,7 @@ namespace Esri
                 }
                 else
                 {
+                    removedSegments.Add(segm);
                     if (segm is GeodesicOffsetLine)
                         CuttedLines.Add(segm as GeodesicOffsetLine);
                     else if (segm is GeodesicArc)
@@ -431,6 +432,10 @@ namespace Esri
             }
             this.OffsetLines = linesInside;
             this.OffsetArcs = arcsInside;
+            foreach (var segm in removedSegments)
+            {
+                this.OffsetSegments.Remove(segm);
+            }
         }
 
         public IEnumerable<MapPoint> GetCalculatedPoints()

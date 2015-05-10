@@ -7,17 +7,17 @@ namespace Ellipsoidus
 {
     public class GeodesicParallelLineDeviationsTest : TestBase
     {
-        public GeodesicLine SourceLine;
-        public GeodesicLine OffsetLine;
+        public GeodesicLineSegment SourceLine;
+        public GeodesicLineSegment OffsetLine;
         public double OffsetDist { get; private set; }
 
         public GeodesicParallelLineDeviationsTest(MapPoint startPoint, MapPoint endPoint, double offsetDist)
         {
             this.OffsetDist = offsetDist;
-            this.SourceLine = GeodesicLine.Create(startPoint, endPoint);
+            this.SourceLine = GeodesicLineSegment.Create(startPoint, endPoint);
 
             var offsLn = this.SourceLine.Offset(offsetDist);
-            this.OffsetLine = GeodesicLine.Create(offsLn.StartPoint, offsLn.EndPoint);
+            this.OffsetLine = GeodesicLineSegment.Create(offsLn.StartPoint, offsLn.EndPoint);
         }
 
         public override void RunTest()
@@ -32,7 +32,7 @@ namespace Ellipsoidus
             for (int i = 1; i < this.SourceLine.DensifyPoints.Count - 1; i++)
             {
                 var pt = this.SourceLine.DensifyPoints[i];
-                var ptLn = GeodesicLine.Create(pt, this.SourceLine.EndPoint);
+                var ptLn = GeodesicLineSegment.Create(pt, this.SourceLine.EndPoint);
                 var offsetPt = pt.GeodesicMove(ptLn.StartAzimuth + Geodesic.OrhtoAzimuth, this.OffsetDist);
                 var near = GeometryEngine.NearestCoordinate(this.OffsetLine, offsetPt);
                 if (near.Distance > maxDeviation)
@@ -45,9 +45,9 @@ namespace Ellipsoidus
                 }
             }
 
-            var deviationLn = GeodesicLine.Create(maxDevSrcLnOffsetPt, maxDevOffsetLnPt);
+            var deviationLn = GeodesicLineSegment.Create(maxDevSrcLnOffsetPt, maxDevOffsetLnPt);
             var sourceLnMidOffset = this.SourceLine.MidPoint.GeodesicMove(this.SourceLine.MidAzimuth + Geodesic.OrhtoAzimuth, this.OffsetDist);
-            var geoDevLn = GeodesicLine.Create(sourceLnMidOffset, this.OffsetLine.MidPoint);
+            var geoDevLn = GeodesicLineSegment.Create(sourceLnMidOffset, this.OffsetLine.MidPoint);
 
             var lnSymb = Symbols.Blue2;
 
@@ -60,7 +60,7 @@ namespace Ellipsoidus
             this.Layer.Add(this.OffsetLine.EndPoint, lnSymb.Point);
 
             var geometricSymb = Symbols.Red2;
-            var maxDevOffsetLn = GeodesicLine.Create(maxDevSrcLnPt, maxDevSrcLnPt);
+            var maxDevOffsetLn = GeodesicLineSegment.Create(maxDevSrcLnPt, maxDevSrcLnPt);
             this.Layer.Add(maxDevOffsetLn, lnSymb.Line);
             this.Layer.Add(maxDevOffsetLn.StartPoint, lnSymb.Point);
             this.Layer.Add(maxDevOffsetLn.EndPoint, lnSymb.Point);
@@ -68,7 +68,7 @@ namespace Ellipsoidus
             this.Layer.Add(maxDevOffsetLnPt, geometricSymb.Point);
 
             var geodesicSymb = Symbols.Magenta2;
-            var geodesicLn = GeodesicLine.Create(this.SourceLine.MidPoint, sourceLnMidOffset);
+            var geodesicLn = GeodesicLineSegment.Create(this.SourceLine.MidPoint, sourceLnMidOffset);
             this.Layer.Add(geodesicLn, lnSymb.Line);
             this.Layer.Add(geodesicLn.StartPoint, lnSymb.Point);
             this.Layer.Add(geodesicLn.EndPoint, lnSymb.Point);

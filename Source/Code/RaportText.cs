@@ -20,7 +20,7 @@ namespace Ellipsoidus
             base.Add(dsc + Utils.WgsPointToSTring(pt));
         }
 
-        public void AddLineInfo(GeodesicLine ln, string header = null)
+        public void AddLineInfo(GeodesicLineSegment ln, string header = null)
         {
             string prefix = "";
             if (!string.IsNullOrEmpty(header))
@@ -37,7 +37,7 @@ namespace Ellipsoidus
             base.Add("");
         }
 
-        public void AddDist(GeodesicLine ln, string dsc = null)
+        public void AddDist(GeodesicLineSegment ln, string dsc = null)
         {
             if (!string.IsNullOrEmpty(dsc))
             {
@@ -45,5 +45,11 @@ namespace Ellipsoidus
             }
             base.Add(dsc + Utils.DistToString(ln));
         }
+
+        public void SaveToFile(string filePath)
+        {
+            System.IO.File.WriteAllLines(filePath, this);
+        }
+
     }
 }

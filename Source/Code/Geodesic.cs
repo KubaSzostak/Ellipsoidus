@@ -10,61 +10,13 @@ namespace Esri
     public class Geodesic
     {
 
-        private const double EarthRadius = 6371000.0; // meters
-        public const double RadToDeg = 180.0 / Math.PI;
-        public const double DegToRad = Math.PI / 180.0;
         public const double OrhtoAzimuth = 90.0;
-
-        
-        /// <summary>
-        /// Represents the smallest distance between two points (meters)
-        /// </summary>
-        public const double DistanceEpsilon = 0.001;
-
-        /// <summary>
-        /// Represents the smallest arc length on the auxiliary sphere between two points (degrees)
-        /// </summary>
-        public static readonly double ArcEpsilon = Math.Atan(DistanceEpsilon / EarthRadius) * RadToDeg; 
-        
-        // 0.001m -> 0.000 000 008 99◦
-
-        // Karney:
-        // φ:  41.793 310 205 06◦ 
-        // λ: 137.844 900 043 77◦
-        //      0.123 456 789 01
-
 
         public static double GetAngle(double leftAzimuth, double rightAzimuth)
         {
-            if (leftAzimuth < 0.0)
-                leftAzimuth = leftAzimuth + 360.0;
-
-            if (rightAzimuth < 0.0)
-                rightAzimuth = rightAzimuth + 360.0;
-
-            var angle = rightAzimuth - leftAzimuth;
-            if (angle < 0.0)
-                angle = angle + 360.0;
-
-            return angle;
+            return NETGeographicLib.GeodesicUtils.GetAngle(leftAzimuth, rightAzimuth);
         }
-            
-    }
 
-    public class GeodesicProximity
-    {
-        public double Azimuth { get; private set; }
-        public double Distance { get; private set; }
-        public double Direction { get; private set; }
-        public MapPoint Point { get; private set; }
-
-        public GeodesicProximity( MapPoint pt, double dist, double direction, double az)
-        {
-            this.Point = pt;
-            this.Direction = dist;
-            this.Direction = direction;
-            this.Azimuth = az;
-        }
     }
 
 
@@ -109,7 +61,7 @@ namespace Esri
         /// </summary>
         /// <param name="maxDeviation"></param>
         /// <returns></returns>
-        public virtual List<MapPoint> GetGeodesicDensifyPoints(double maxDeviation)
+        public virtual List<MapPoint> GetDensifyPoints(double maxDeviation)
         {
             return new List<MapPoint>();
         }
@@ -129,9 +81,20 @@ namespace Esri
             var name = this.GetType().Name.Replace("Geodesic", "");
             return GetDisplayName(name, StartPoint.Id, EndPoint.Id);
         }
+
+        internal MapPoint GetSegmentPoint(MapPoint pt)
+        {
+            if (pt.IsEqual2d(this.StartPoint))
+                return this.StartPoint;
+
+            if (pt.IsEqual2d(this.EndPoint))
+                return this.EndPoint;
+
+            return pt;
+        }
     }
 
-    public class GeodesicLine : GeodesicSegment
+    public class GeodesicLineSegment : GeodesicSegment
     {
 
         public double StartAzimuth { get; private set; }
@@ -140,96 +103,57 @@ namespace Esri
         public double Distance { get; private set; }
         public double ArcLength { get; private set; }
 
-        public GeodesicLine(GeographicLib.GeodesicData geoData, IList<MapPoint> points)
+        private NETGeographicLib.GeodesicLineSegment Line;
+
+        public GeodesicLineSegment(NETGeographicLib.GeodesicLineSegment ln, IList<MapPoint> points)
             : base(points)
         {
-            this.Distance = geoData.s12;
-            this.ArcLength = geoData.a12;
+            this.Line = ln;
 
-            this.StartAzimuth = geoData.azi1;
-            this.EndAzimuth = geoData.azi2;
+            this.Distance = ln.Dist12;
+            this.ArcLength = ln.Arc12;
 
-            //this.MidPoint = StartPoint.GeodesicMove(this.StartAzimuth, this.Distance * 0.5);
-            //this.MidAzimuth = this.MidPoint.GeodesicAzimuthTo(this.EndPoint); 
-            var midData = GeographicLib.Geodesic.WGS84.Direct(geoData.lat1, geoData.lon1, this.StartAzimuth, this.Distance * 0.5);
-            this.MidPoint = new MapPoint(midData.lon2, midData.lat2);
-            this.MidAzimuth = midData.azi2;
+            this.StartAzimuth = ln.Azi1;
+            this.EndAzimuth = ln.Azi2;
+
+            double midAz;
+            var mid = ln.ArcPosition(ln.Arc12 * 0.5, out midAz);
+            this.MidPoint = mid.ToMapPoint().Cast();
+            this.MidPoint.Id = "Mid(" + this.StartPoint.Id + "," + this.EndPoint.Id + ")";
+
+            this.MidAzimuth = midAz;
         }
 
-        public static GeodesicLine Create(MapPoint start, MapPoint end)
+        public static GeodesicLineSegment Create(MapPoint start, MapPoint end)
         {
-            var geoData = GeographicLib.Geodesic.WGS84.Inverse(start.Y, start.X, end.Y, end.X);
-
+            var ln = new NETGeographicLib.GeodesicLineSegment(start.ToGeoPoint(), end.ToGeoPoint());
+            
             // Difference between geodesic straight line (1km) and parallel line (at offset 12M) is 0.1mm
             // But cutting projected lines (1km) causes about 50mm deviations
-            double densifyDist = 200.0; 
+            double densifyDist = 200.0;
 
-            var points = GeodesicLine.GetDensifyPoints(start.Cast(), end.Cast(), geoData.azi1, geoData.s12, densifyDist);
-            return new GeodesicLine(geoData, points);
+            var geoPoints = ln.GetDensifyPoints(densifyDist);
+            var mapPoints = new List<MapPoint>();
+            mapPoints.Add(start);
+            foreach (var gpt in geoPoints)
+            {
+                mapPoints.Add(gpt.ToMapPoint());
+            }
+            mapPoints.Add(end);
+
+            return new GeodesicLineSegment(ln, mapPoints);
         }
 
 
-        public MapPoint MidPoint { get; private set; }
+        public GeodesicMapPoint MidPoint { get; private set; }
         public double MidAzimuth {get; private set;}
 
-        public override List<MapPoint> GetGeodesicDensifyPoints(double maxDeviation)
+        public override List<MapPoint> GetDensifyPoints(double maxDeviation)
         {
             // This is GeodesicLine, so there are no densify points (all points on this line have deviation=0)
             return new List<MapPoint>();
         }
 
-
-        private static List<MapPoint> GetDensifyPoints(MapPoint startPoint, MapPoint endPoint, double startAz, double lnLength, double maxSegmentLength)
-        {
-            var res = new List<MapPoint>();
-            double segmentCount = Math.Ceiling(lnLength / maxSegmentLength);
-            double segmentLength = lnLength / segmentCount;
-            double builderLength = 0.0;
-            double builderMaxLength = lnLength - maxSegmentLength * 0.01;
-
-            res.Add(startPoint);
-            while (builderLength + segmentLength < builderMaxLength)
-            {
-                builderLength += segmentLength;
-                var builderPt = startPoint.GeodesicMove(startAz, builderLength);
-                res.Add(builderPt);
-            }
-            res.Add(endPoint);
-
-            return res;
-        }
-        private GeodesicPolyline GetOffsetLines(IList<MapPoint> sourcePoints, double offsetDist, double maxDeviation)
-        {
-            var densifyPoints = new List<MapPoint>(sourcePoints.Count);
-            var offsetLines = new List<GeodesicLine>(sourcePoints.Count);
-
-            for (int i = 0; i < sourcePoints.Count - 1; i++)
-            {
-                var sourceStart = sourcePoints[i];
-                var sourceEnd = sourcePoints[i + 1];
-                var sourceLn = GeodesicLine.Create(sourceStart, sourceEnd);
-
-                var sourceLnMidOffset = sourceLn.MidPoint.GeodesicMove(sourceLn.MidAzimuth + Geodesic.OrhtoAzimuth, offsetDist);
-                var offsetStart = sourceStart.GeodesicMove(sourceLn.StartAzimuth + Geodesic.OrhtoAzimuth, offsetDist);
-                var offsetEnd = sourceEnd.GeodesicMove(sourceLn.EndAzimuth + Geodesic.OrhtoAzimuth, offsetDist);
-                var offsetLn = GeodesicLine.Create(offsetStart, offsetEnd);
-                offsetLines.Add(offsetLn);
-
-                var midLn = GeodesicLine.Create(sourceLnMidOffset, offsetLn.MidPoint);
-                densifyPoints.Add(sourceStart);
-                if (midLn.Distance > maxDeviation)
-                {
-                    densifyPoints.Add(sourceLn.MidPoint);
-                }
-            }
-            densifyPoints.Add(sourcePoints[sourcePoints.Count - 1]);
-
-            if (densifyPoints.Count > sourcePoints.Count)
-                return this.GetOffsetLines(densifyPoints, offsetDist, maxDeviation);
-
-            return GeodesicPolyline.Create(offsetLines);
-
-        }
 
         public GeodesicOffsetLine Offset(double offsetDist)
         {
@@ -245,63 +169,43 @@ namespace Esri
 
             return res;
         }
-
-        public MapPoint PointOnLine(double dist)
-        {
-            return this.StartPoint.GeodesicMove(this.StartAzimuth, dist);
-        }
         
-        private double GeodesicDistTo(GeodesicLine ln, MapPoint point)
-        {
-            var startDist = ln.StartPoint.GeodesicDistTo(point);
-            var startAz = ln.StartPoint.GeodesicAzimuthTo(point);
-            var startAngle = Geodesic.GetAngle(ln.StartAzimuth, startAz);
-
-            // Point is 'before' line
-            if ((startAngle >= 90.0 - Geodesic.ArcEpsilon) && (startAngle <= 360.0 - 90.0 + Geodesic.ArcEpsilon))
-                return startDist;
-                        
-            var endDist = ln.EndPoint.GeodesicDistTo(point);
-            var endAz = ln.EndPoint.GeodesicAzimuthTo(point);
-            var endAngle = Geodesic.GetAngle(ln.EndAzimuth, endAz);
-
-            // Point is 'after' line
-            if ((endAngle <= 90.0 + Geodesic.ArcEpsilon) || (endAngle >= 360.0 - 90.0 - Geodesic.ArcEpsilon))
-                return endDist;
-
-            var midDist = ln.MidPoint.GeodesicDistTo(point);
-
-            var newStartDist = startDist;
-            var newEndDist = midDist;
-            var newStartPt = ln.StartPoint;
-            var newEndPt = ln.MidPoint;
-
-            if (endDist < startDist)
-            {
-                newStartPt = ln.MidPoint.Cast();
-                newEndPt = ln.EndPoint;
-                newStartDist = midDist;
-                newEndDist = endDist;
-            }
-
-            if (Math.Abs(newStartDist - newEndDist) < Geodesic.DistanceEpsilon * 0.1)
-                return (newStartDist + newEndDist) * 0.5;
-
-            GeodesicLine newLn = GeodesicLine.Create(newStartPt, newEndPt);
-            return this.GeodesicDistTo(newLn, point);
-        }
-
         public double GeodesicDistTo(MapPoint point)
         {
-            return this.GeodesicDistTo(this, point);
+            return this.Line.DistTo(point.ToGeoPoint());
         }
+
+        public GeodesicProximity NearestCoordinate(MapPoint point)
+        {
+            bool cross;
+            double dist;
+            
+            var gpt = this.Line.NearestCoordinate(point.ToGeoPoint(), out cross);
+            this.Line.Geodesic.Inverse(point.ToGeoPoint(), gpt, out dist);
+
+            var res = new GeodesicProximity();
+            res.Line = this;
+            res.Point = this.GetSegmentPoint(gpt.ToMapPoint());
+            res.Line.Distance = dist;
+
+            return res;
+        }
+
+    }
+
+    public class GeodesicProximity
+    {
+        public GeodesicLineSegment Line { get; internal set; }
+        public MapPoint Point { get; internal set; }
+        public double Distance { get; internal set; }
+
     }
 
 
 
     public class GeodesicOffsetLine : GeodesicSegment
     {
-        private GeodesicOffsetLine(IList<MapPoint> points, GeodesicLine sourceLn, double offsetDist)
+        private GeodesicOffsetLine(IList<MapPoint> points, GeodesicLineSegment sourceLn, double offsetDist)
             : base(points)
 	    {
             this.SourceLine = sourceLn;
@@ -325,11 +229,11 @@ namespace Esri
             }
 	    }
 
-        public GeodesicLine SourceLine { get; private set; }
+        public GeodesicLineSegment SourceLine { get; private set; }
         public double OffsetDist { get; private set; }
         public MapPoint MidPoint { get; private set; }
 
-        public static GeodesicOffsetLine Create(GeodesicLine sourceLn, double offsetDist)
+        public static GeodesicOffsetLine Create(GeodesicLineSegment sourceLn, double offsetDist)
         {
             var points = GetProjectionDensifyPoints(sourceLn, offsetDist);
             var res = new GeodesicOffsetLine(points, sourceLn, offsetDist);
@@ -339,7 +243,7 @@ namespace Esri
             return res;
         }
 
-        private static List<MapPoint> GetProjectionDensifyPoints(GeodesicLine sourceLn, double offsetDist)
+        private static List<MapPoint> GetProjectionDensifyPoints(GeodesicLineSegment sourceLn, double offsetDist)
         {
             var points = new List<MapPoint>();
 
@@ -364,10 +268,10 @@ namespace Esri
             return points;
         }
 
-        public override List<MapPoint> GetGeodesicDensifyPoints(double maxDeviation)
+        public override List<MapPoint> GetDensifyPoints(double maxDeviation)
         {
-            var offsetLines = new List<GeodesicLine>();
-            offsetLines.Add(GeodesicLine.Create(this.StartPoint, this.EndPoint));
+            var offsetLines = new List<GeodesicLineSegment>();
+            offsetLines.Add(GeodesicLineSegment.Create(this.StartPoint, this.EndPoint));
             offsetLines = GetOffsetGeodesicLines(offsetLines, maxDeviation);
 
             var res = new List<MapPoint>();
@@ -380,9 +284,9 @@ namespace Esri
             return res;
         }
 
-        private List<GeodesicLine> GetOffsetGeodesicLines(List<GeodesicLine> offsetLines, double maxDeviation)
+        private List<GeodesicLineSegment> GetOffsetGeodesicLines(List<GeodesicLineSegment> offsetLines, double maxDeviation)
         {
-            var resLines = new List<GeodesicLine>();
+            var resLines = new List<GeodesicLineSegment>();
 
             foreach (var offsetLn in offsetLines)
             {
@@ -390,8 +294,8 @@ namespace Esri
                 var dist = offsetLn.GeodesicDistTo(near.Point);
                 if (dist >= maxDeviation)
                 {
-                    var ln1 = GeodesicLine.Create(offsetLn.StartPoint, near.Point);
-                    var ln2 = GeodesicLine.Create(near.Point, offsetLn.EndPoint);
+                    var ln1 = GeodesicLineSegment.Create(offsetLn.StartPoint, near.Point);
+                    var ln2 = GeodesicLineSegment.Create(near.Point, offsetLn.EndPoint);
                     resLines.Add(ln1);
                     resLines.Add(ln2);
                 }
@@ -444,10 +348,10 @@ namespace Esri
         public GeodesicMapPoint FirstVertex { get; private set; }
         public GeodesicMapPoint LastVertex { get; private set; }
         public List<GeodesicMapPoint> Vertices { get; private set; }
-        public IList<GeodesicLine> Lines { get; private set; }
+        public IList<GeodesicLineSegment> Lines { get; private set; }
         public IList<MapPoint> DensifyPoints { get; private set; }
 
-        private GeodesicPolyline(IList<MapPoint> points, List<GeodesicMapPoint> vertices, IList<GeodesicLine> lines)
+        private GeodesicPolyline(IList<MapPoint> points, List<GeodesicMapPoint> vertices, IList<GeodesicLineSegment> lines)
             : base(points)
         {
             this.Vertices = vertices;
@@ -456,7 +360,7 @@ namespace Esri
             this.Lines = lines;
             this.DensifyPoints = points;
         }
-        public static GeodesicPolyline Create(IList<GeodesicLine> lines)
+        public static GeodesicPolyline Create(IList<GeodesicLineSegment> lines)
         {
             var vertices = new List<GeodesicMapPoint>(lines.Count + 1);
             var points = new List<MapPoint>(lines.Count + 1);
@@ -479,10 +383,10 @@ namespace Esri
 
         public static GeodesicPolyline Create(IList<MapPoint> points)
         {
-            var lines = new List<GeodesicLine>(points.Count);
+            var lines = new List<GeodesicLineSegment>(points.Count);
             for (int i = 0; i < points.Count - 1; i++)
             {
-                var ln = GeodesicLine.Create(points[i], points[i + 1]);
+                var ln = GeodesicLineSegment.Create(points[i], points[i + 1]);
                 lines.Add(ln);
             }
             return GeodesicPolyline.Create(lines);
@@ -584,7 +488,7 @@ namespace Esri
                 throw new ArgumentException("endAzimuth must be greater than startAzimuth");
             
             var points = new List<MapPoint>();
-            var maxDevCos = radius / (radius + Geodesic.DistanceEpsilon * 0.2);
+            var maxDevCos = radius / (radius + NETGeographicLib.GeodesicUtils.DistanceEpsilon);
             var azDeltaRad = 2.0 * Math.Acos(maxDevCos);
             var densifyDist = radius * azDeltaRad;
             if (densifyDist > 1000.0)
@@ -605,7 +509,7 @@ namespace Esri
             return new GeodesicArc(center.Cast(), radius, densifyDist, points, startAzimuth, endAzimuth);
         }
 
-        public override List<MapPoint> GetGeodesicDensifyPoints(double maxDeviation)
+        public override List<MapPoint> GetDensifyPoints(double maxDeviation)
         {
             var points = new List<MapPoint>();
             var maxDevCos = this.Radius / (this.Radius + maxDeviation);
@@ -655,111 +559,5 @@ namespace Esri
         }
     }
 
-
-    public static class GeodesicEx
-    {
-        public static MapPoint GeodesicMove(this MapPoint startPt, double azimuth, double length)
-        {
-            if (startPt.SpatialReference != null && !startPt.SpatialReference.IsGeographic)
-            {
-                startPt = (GeometryEngine.Project(startPt, SpatialReferences.Wgs84) as MapPoint);
-            }
-
-            var geoData = GeographicLib.Geodesic.WGS84.Direct(startPt.Y, startPt.X, azimuth, length, GeographicLib.GeodesicMask.LATITUDE | GeographicLib.GeodesicMask.LONGITUDE);
-                          
-            return new MapPoint(geoData.lon2, geoData.lat2, SpatialReferences.Wgs84);
-        }
-
-        public static double GeodesicDistTo(this MapPoint start, MapPoint point)
-        {
-            var geoData = GeographicLib.Geodesic.WGS84.Inverse(start.Y, start.X, point.Y, point.X, GeographicLib.GeodesicMask.DISTANCE);
-            return geoData.s12;
-        }
-
-        public static double GeodesicAzimuthTo(this MapPoint start, MapPoint point)
-        {
-            var geoData = GeographicLib.Geodesic.WGS84.Inverse(start.Y, start.X, point.Y, point.X, GeographicLib.GeodesicMask.AZIMUTH);
-            return geoData.azi1;
-        }
-
-        public static GeodesicMapPoint Cast(this MapPoint p)
-        {
-            if (p is GeodesicMapPoint)
-                return p as GeodesicMapPoint;
-
-            if (p.HasZ)
-                return new GeodesicMapPoint(null, p.X, p.Y, p.Z, p.SpatialReference);
-
-            return new GeodesicMapPoint(null, p.X, p.Y, p.SpatialReference);
-        }
-
-        public static GeodesicSegment FindByStartPoint(this IEnumerable<GeodesicSegment> segments, MapPoint point)
-        {
-            foreach (var segm in segments)
-            {
-                if (segm.StartPoint.IsEqual2d(point))
-                    return segm;
-            }
-            return null;
-        }
-
-        public static GeodesicSegment FindByEndPoint(this IEnumerable<GeodesicSegment> segments, MapPoint point)
-        {
-            foreach (var segm in segments)
-            {
-                if (segm.EndPoint.IsEqual2d(point))
-                    return segm;
-            }
-            return null;
-        }
-
-        public static IEnumerable<MapPoint> GetGeodesicDensifyPoints(this IEnumerable<GeodesicSegment> segments, double maxDeviation)
-        {
-            var points = new List<MapPoint>();
-
-            foreach (var segm in segments)
-            {
-                points.Add(segm.StartPoint);
-                var densifyPoints = segm.GetGeodesicDensifyPoints(maxDeviation);
-                points.AddRange(densifyPoints);
-            }
-            var lastSegm = segments.LastOrDefault();
-            if (lastSegm != null)
-                points.Add(lastSegm.EndPoint);
-
-            return points;
-        }
-
-        /// <summary>
-        /// This gives extreme precision
-        /// </summary>
-        public static IEnumerable<MapPoint> GetGeodesicDensifyPoints(this IEnumerable<GeodesicSegment> segments)
-        {
-            var points = new List<MapPoint>();
-
-            foreach (var segm in segments)
-            {
-                //TODO: remove duplicated Start/End points?
-                points.AddRange(segm.DensifyPoints);
-            }
-
-            return points;
-        }
-
-        public static List<GeodesicMapPoint> GetVertices(this IEnumerable<GeodesicSegment> segments)
-        {
-            var vertices = new List<GeodesicMapPoint>();
-
-            foreach (var segm in segments)
-            {
-                vertices.Add(segm.StartPoint);
-            }
-            var lastSegm = segments.LastOrDefault();
-            if (lastSegm != null)
-                vertices.Add(lastSegm.EndPoint);
-
-            return vertices;
-        }
-    }
 
 }

@@ -28,7 +28,17 @@ namespace System
             Process.Start(Utils.TextFilePaht);
         }
 
-        public static string ToDegMinSecString(double angle)
+        public static string ToDegMinSecString(double angle, double linearPrec)
+        {
+            if (linearPrec > 0.4)
+                return ToDegMinSecString(angle, "00.00");
+            else if (linearPrec > 0.5)
+                return ToDegMinSecString(angle, "00.000");
+            else
+                return ToDegMinSecString(angle, "00.0000");
+        }
+
+        public static string ToDegMinSecString(double angle, string secPrecision)
         {
             var deg = Math.Floor(angle);
 
@@ -38,7 +48,7 @@ namespace System
             angle = (angle - min) * 60; // seconds
             var sec = angle;
 
-            return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(SecPrecision) + '"';
+            return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(secPrecision) + '"';
         }
 
         public static string ToDegString(double angle)
@@ -88,7 +98,7 @@ namespace System
             return id + Utils.ToDegString(pt.Y) + "  " + Utils.ToDegString(pt.X);
         }
 
-        public static string DistToString(GeodesicLine ln)
+        public static string DistToString(GeodesicLineSegment ln)
         {
             var dist = ln.Distance;
             if (dist > 0.1)
@@ -135,6 +145,41 @@ namespace System
             }
         }
 
+        public static List<GeodesicMapPoint> LoadFromFile(string filePath)
+        {
+            var lines = IO.File.ReadAllLines(filePath);
+            var res = new List<GeodesicMapPoint>();
+
+            foreach (var ln in lines)
+            {
+                var tln = ln.Trim();
+                if (!string.IsNullOrWhiteSpace(ln) && !tln.StartsWith(";") && !tln.StartsWith("#"))
+                {
+                    var pt = Utils.StringToPoint(tln);
+                    res.Add(pt);
+                }
+            }
+            return res;
+        }
+
+        public static void SaveToFile(IEnumerable<GeodesicMapPoint> points, string filePath, double linearPrec)
+        {
+            var lines = new List<string>();
+            var i = 0;
+
+            foreach (var pt in points)
+            {
+                i++;
+                var id = pt.Id;
+                if (string.IsNullOrWhiteSpace(id))
+                    id = "#" + i.ToString();
+
+                var ln = id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y, linearPrec).PadLeft(15) + "  " + ToDegMinSecString(pt.X, linearPrec).PadLeft(15);
+                lines.Add(ln);
+            }
+            IO.File.WriteAllLines(filePath, lines, Encoding.UTF8);
+        }
+
         public static void SaveToFile(string filePath, IEnumerable<MapPoint> points, string header = null)
         {
             var lines = new List<string>();
@@ -158,40 +203,6 @@ namespace System
             }
 
             File.WriteAllLines(filePath, lines.ToArray());
-        }
-
-        public static List<GeodesicMapPoint> LoadFromFile(string filePath)
-        {
-            var lines = IO.File.ReadAllLines(filePath);
-            var res = new List<GeodesicMapPoint>();
-
-            foreach (var ln in lines)
-            {
-                if (!string.IsNullOrWhiteSpace(ln) && !ln.StartsWith(";"))
-                {
-                    var pt = Utils.StringToPoint(ln);
-                    res.Add(pt);
-                }
-            }
-            return res;
-        }
-
-        public static void SaveToFile(IEnumerable<GeodesicMapPoint> points, string filePath)
-        {
-            var lines = new List<string>();
-            var i = 0;
-
-            foreach (var pt in points)
-            {
-                i++;
-                var id = pt.Id;
-                if (string.IsNullOrWhiteSpace(id))
-                    id = "#" + i.ToString();
-
-                var ln = id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y).PadLeft(15) + "  " + ToDegMinSecString(pt.X).PadLeft(15);
-                lines.Add(ln);
-            }
-            IO.File.WriteAllLines(filePath, lines, Encoding.UTF8);
         }
     }
 }

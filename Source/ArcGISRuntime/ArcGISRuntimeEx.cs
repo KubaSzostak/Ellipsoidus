@@ -95,9 +95,11 @@ namespace Esri
 
         public static bool IsEqual2d(this MapPoint point, MapPoint other)
         {
+            var eps = NETGeographicLib.GeodesicUtils.ArcEpsilon * 2.0;
             var dx = Math.Abs(point.X - other.X);
             var dy = Math.Abs(point.Y - other.Y);
-            return (dx <= Geodesic.ArcEpsilon * 2.0) && (dy <= Geodesic.ArcEpsilon * 2.0);
+
+            return (dx <= eps) && (dy <= eps);
         }
 
         public static IEnumerable<MapPoint> GetPoints(this Polyline ln)
@@ -132,6 +134,20 @@ namespace Esri
                 res.Add(pt.Cast());
             }
             return res;
+        }
+
+        public static NETGeographicLib.GeoPoint ToGeoPoint(this MapPoint point)
+        {
+            if (point.SpatialReference != null && !point.SpatialReference.IsGeographic)
+            {
+                point = (GeometryEngine.Project(point, SpatialReferences.Wgs84) as MapPoint);
+            }
+            return new NETGeographicLib.GeoPoint() { Lat = point.Y, Lon = point.X };
+        }
+
+        public static MapPoint ToMapPoint(this NETGeographicLib.GeoPoint point)
+        {
+            return new MapPoint(point.Lon, point.Lat, SpatialReferences.Wgs84);
         }
     }
 }

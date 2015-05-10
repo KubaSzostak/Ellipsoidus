@@ -330,6 +330,7 @@ namespace Ellipsoidus
 			this.ClearToolsResults();
 			this.SourceLineGeodesicLayer.Graphics.Clear();
 			this.SourceLineProjectedLayer.Graphics.Clear();
+            this.DensifyLayer.Graphics.Clear();
 
             var projectedLine = new Polyline(points);
             this.BaseLine = GeodesicPolyline.Create(points.Cast<MapPoint>().ToList());
@@ -499,8 +500,12 @@ namespace Ellipsoidus
             var fn = Path.ChangeExtension(dlg.FileName, null);
 
             ShapeFile.SaveLine(this.BaseLine.Vertices, fn + ".shp");
-            ShapeFile.SaveLineDensify(this.BaseLine.Lines, fn + "-geodesic.shp");
+
             ShapeFile.SavePoints(this.BaseLine.Vertices, fn + "-points.shp");
+            Utils.SaveToFile(this.BaseLine.Vertices, fn + "-points.txt", 0.1);
+
+            ShapeFile.SaveLineDensify(this.BaseLine.Lines, fn + "-geodesic.shp");
+
 
             ShowInfoBox("Exported.");
         }
@@ -523,9 +528,25 @@ namespace Ellipsoidus
             }
             catch { }
         }
+        
+        private void UpdateDensifyPoints(IEnumerable<MapPoint> points)
+        {
+            this.DensifyLayer.Dispatcher.Invoke(() =>
+            {
+                this.DensifyLayer.Graphics.Clear();
+
+                var dln = new Polyline(points);
+                var dpts = new Multipoint(points);
+
+                this.DensifyLayer.Add(dln, Symbols.Black2.DashLine);
+                this.DensifyLayer.Add(dpts, Symbols.Black2.Point);
+            });
+        }
 
         private void ExportOffsetData(string destDir, double maxDev)
         {
+            var densiyfyPts = this.OffsetBuilder.OffsetSegments.GetGeodesicDensifyPoints(maxDev);
+            UpdateDensifyPoints(densiyfyPts);
 
             var shpDir = Path.Combine(destDir, "shp") + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(shpDir);
@@ -534,11 +555,11 @@ namespace Ellipsoidus
             Directory.CreateDirectory(txtDir);
 
             var points = ShapeFile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev);
-            Utils.SaveToFile(points, txtDir + "offset-points.txt");
-            Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt");
+            Utils.SaveToFile(points, txtDir + "offset-points.txt", maxDev);
+            Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt", maxDev);
 
             ShapeFile.SaveLineCombo(this.OffsetBuilder.SourceLine.Lines, shpDir + "base-line.shp", maxDev);
-            Utils.SaveToFile(this.BaseLine.Vertices, txtDir + "base-line.txt");
+            Utils.SaveToFile(this.BaseLine.Vertices, txtDir + "base-line.txt", maxDev);
 
             var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);
             ShapeFile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri-buff.shp", maxDev);
@@ -627,6 +648,69 @@ namespace Ellipsoidus
         private void clearCuttingLine_Click(object sender, RoutedEventArgs e)
         {
             ClearCuttingLine();
+        }
+
+        private string GetDistToBaseLineText(string ptId, double dist, double devDist)
+        {
+            return (ptId + ": ").PadLeft(16) + "  " + dist.ToString("0.000").PadLeft(8) + "  (" + (devDist - dist).ToString("0.000") + ")";
+        }
+
+        private void GenerateDistToBaseLineRaport(IEnumerable<MapPoint> points, string fileName)
+        {
+            var devList = new List<double>();
+            double devDist = 22224.0;
+
+            var rap = new RaportText();
+            var pln = GeodesicPolyline.Create(points.Cast<MapPoint>().ToList());
+
+            foreach (var ln in pln.Lines)
+            {
+                rap.AddLineInfo(ln);
+
+                var sdist = BaseLine.GeodesicDistTo(ln.StartPoint);
+                var mdist = BaseLine.GeodesicDistTo(ln.MidPoint);
+                var edist = BaseLine.GeodesicDistTo(ln.EndPoint);
+
+                rap.Add("Geodesic distance:");
+                rap.Add(GetDistToBaseLineText(ln.StartPoint.Id, sdist, devDist));
+                rap.Add(GetDistToBaseLineText(ln.MidPoint.Id, mdist, devDist));
+                rap.Add(GetDistToBaseLineText(ln.EndPoint.Id, sdist, devDist));
+
+                devList.Add(devDist - sdist);
+                devList.Add(devDist - sdist);
+                devList.Add(devDist - sdist);
+
+                rap.AddLn();
+            }
+
+            rap.AddLn();
+            rap.Add("   # SUMMARY # ");
+            rap.Add("Max deviation: " + devList.Max().ToString("0.000"));
+            rap.Add("Min deviation: " + devList.Min().ToString("0.000"));
+
+            rap.SaveToFile(fileName);
+        }
+        
+        private Task GenerateDistToBaseLineRaportAsync(IEnumerable<MapPoint> points, string fileName)
+        {
+            var action = new Action(() => { GenerateDistToBaseLineRaport(points, fileName); });
+            return Task.Run(action, CancellationToken.None);
+        }
+
+        private async void distToBaseLineFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.BaseLine == null)
+            {
+                this.ShowInfoBox("First add base line.");
+                return;
+            }
+            var points = LoadPointsFromFileDialog();
+            if (points == null)
+                return;
+
+            var fn = Path.ChangeExtension(this.Settings.LoadBaseLineFile, null) + "-dist-raport.txt";
+            await this.StartProgress(GenerateDistToBaseLineRaportAsync(points, fn), "Calculating...");
+            this.ShowInfoBox("Saved to " + fn);
         }
     }
 }
