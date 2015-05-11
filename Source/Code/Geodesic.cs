@@ -17,6 +17,11 @@ namespace Esri
             return NETGeographicLib.GeodesicUtils.GetAngle(leftAzimuth, rightAzimuth);
         }
 
+        public static bool IsZeroLength(double length)
+        {
+            return length < NETGeographicLib.GeodesicUtils.DistanceEpsilon * 0.1;
+        }
+
     }
 
 
@@ -29,8 +34,10 @@ namespace Esri
         public double DensifyDist { get; private set; }
 
         public string Origin { get; private set; }
+        public double Length { get; private set; }
 
-        public GeodesicSegment(IList<MapPoint> points)
+
+        public GeodesicSegment(IList<MapPoint> points, double length)
             : base(points)
         {
             this.StartPoint = points[0].Cast();
@@ -40,8 +47,7 @@ namespace Esri
             this.DensifyPoints = points;
             this.DensifyDist = points[0].GeodesicDistTo(points[1]);
 
-
-            this.Origin = this.GetType().Name;
+            this.Length = length;
         }
 
         /// <summary>
@@ -92,6 +98,17 @@ namespace Esri
 
             return pt;
         }
+
+        protected void InitCuttedSegment(GeodesicSegment cuttedSegm)
+        {
+            if (cuttedSegm.StartPoint.IsEqual2d(this.StartPoint))
+                cuttedSegm.StartPoint.CopyFrom(this.StartPoint);
+
+            if (cuttedSegm.EndPoint.IsEqual2d(this.EndPoint))
+                cuttedSegm.EndPoint.CopyFrom(this.EndPoint);
+
+            cuttedSegm.UpdateOrigin("Cut");
+        }
     }
 
     public class GeodesicLineSegment : GeodesicSegment
@@ -100,17 +117,15 @@ namespace Esri
         public double StartAzimuth { get; private set; }
         public double EndAzimuth { get; private set; }
 
-        public readonly double Length;
         public readonly double ArcLength;
 
         private NETGeographicLib.GeodesicLineSegment Line;
 
-        public GeodesicLineSegment(NETGeographicLib.GeodesicLineSegment ln, IList<MapPoint> points)
-            : base(points)
+        public GeodesicLineSegment(NETGeographicLib.GeodesicLineSegment ln, IList<MapPoint> points, double length)
+            : base(points, length)
         {
             this.Line = ln;
 
-            this.Length = ln.Dist12;
             this.ArcLength = ln.Arc12;
 
             this.StartAzimuth = ln.Azi1;
@@ -141,7 +156,7 @@ namespace Esri
             }
             mapPoints.Add(end);
 
-            return new GeodesicLineSegment(ln, mapPoints);
+            return new GeodesicLineSegment(ln, mapPoints, ln.Dist12);
         }
 
 
@@ -205,10 +220,10 @@ namespace Esri
 
     public class GeodesicOffsetLine : GeodesicSegment
     {
-        private GeodesicOffsetLine(IList<MapPoint> points, GeodesicLineSegment sourceLn, double offsetDist)
-            : base(points)
+        internal GeodesicOffsetLine(IList<MapPoint> points, GeodesicLineSegment referenceLn, double offsetDist, double lenght)
+            : base(points, lenght)
 	    {
-            this.SourceLine = sourceLn;
+            this.ReferenceLine = referenceLn;
             this.OffsetDist = offsetDist;
 
             var isEven = (points.Count % 2) == 0; // l.parzysta
@@ -227,18 +242,17 @@ namespace Esri
                 //Trace.WriteLine(points.Count.ToString() + " -> " + midIndex.ToString());
                 this.MidPoint = points[midIndex];
             }
-            this.Length = GeometryEngine.Length(this);
 	    }
 
-        public GeodesicLineSegment SourceLine { get; private set; }
+        public GeodesicLineSegment ReferenceLine { get; private set; }
         public double OffsetDist { get; private set; }
         public MapPoint MidPoint { get; private set; }
-        public double Length { get; private set; }
 
         public static GeodesicOffsetLine Create(GeodesicLineSegment sourceLn, double offsetDist)
         {
             var points = GetProjectionDensifyPoints(sourceLn, offsetDist);
-            var res = new GeodesicOffsetLine(points, sourceLn, offsetDist);
+
+            var res = new GeodesicOffsetLine(points, sourceLn, offsetDist, points.GeodesicLength());
             res.StartPoint.Id = sourceLn.StartPoint.Id;
             res.EndPoint.Id = sourceLn.EndPoint.Id;
 
@@ -318,6 +332,11 @@ namespace Esri
         {
             var cutRes = GeometryEngine.Cut(this, cutter);
             var res = new List<GeodesicOffsetLine>();
+            if (cutRes.FirstOrDefault() == null)
+            {
+                res.Add(this);
+                return res;
+            }
             
             foreach (var geom in cutRes)
             {
@@ -325,22 +344,21 @@ namespace Esri
                 if (cutLn != null)
                 {
                     var cutPts = cutLn.GetPoints().ToList();
-                    if (cutPts.Count > 1)
+                    var len = cutPts.GeodesicLength();
+                    if ((cutPts.Count > 1) && (!Geodesic.IsZeroLength(len)))
                     {
-                        var resLn = new GeodesicOffsetLine(cutPts, this.SourceLine, this.OffsetDist);
-
-                        if (resLn.StartPoint.IsEqual2d(this.StartPoint))
-                            resLn.StartPoint.CopyFrom(this.StartPoint);
-
-                        if (resLn.EndPoint.IsEqual2d(this.EndPoint))
-                            resLn.EndPoint.CopyFrom(this.EndPoint);
-
-                        resLn.UpdateOrigin("Cut");
+                        var resLn = new GeodesicOffsetLine(cutPts, this.ReferenceLine, this.OffsetDist, len);
+                        this.InitCuttedSegment(resLn);
                         res.Add(resLn);
                     }
                 }
             }
             return res;
+        }
+
+        public override string ToString()
+        {
+            return base.ToString() + ", Length: " + this.Length.ToString("0.0000");
         }
     }
 
@@ -475,8 +493,8 @@ namespace Esri
         public double EndAzimuth { get; private set; }
 
 
-        internal GeodesicArc(GeodesicMapPoint center, double radius, double densifyDist, IList<MapPoint> points, double startAz, double endAz)
-            : base(points)
+        internal GeodesicArc(GeodesicMapPoint center, double radius, double densifyDist, IList<MapPoint> points, double startAz, double endAz, double length)
+            : base(points, length)
         {
             this.Center = center;
             this.Radius = radius;
@@ -502,7 +520,7 @@ namespace Esri
                 endAzimuth += 360.0;
             if (startAzimuth >= endAzimuth)
                 throw new ArgumentException("endAzimuth must be greater than startAzimuth");
-            
+
             var points = new List<MapPoint>();
             var maxDevCos = radius / (radius + NETGeographicLib.GeodesicUtils.DistanceEpsilon);
             var azDeltaRad = 2.0 * Math.Acos(maxDevCos);
@@ -522,7 +540,14 @@ namespace Esri
             var lastPt = center.GeodesicMove(endAzimuth, radius);
             points.Add(lastPt);
 
-            return new GeodesicArc(center.Cast(), radius, densifyDist, points, startAzimuth, endAzimuth);
+            var len = GetLength(radius, startAzimuth, endAzimuth);
+            return new GeodesicArc(center.Cast(), radius, densifyDist, points, startAzimuth, endAzimuth, len);
+        }
+
+        public static double GetLength(double radius, double startAzimuth, double endAzimuth)
+        {
+            var angleRad = Geodesic.GetAngle(startAzimuth, endAzimuth) * NETGeographicLib.GeodesicUtils.DegToRad;
+            return 2.0 * angleRad * radius;
         }
 
         public override List<MapPoint> GetDensifyPoints(double maxDeviation)
@@ -546,6 +571,12 @@ namespace Esri
         {
             var res = new List<GeodesicArc>();
             var cutRes = GeometryEngine.Cut(this, cutter);
+            if (cutRes.FirstOrDefault() == null) 
+            {
+                res.Add(this);
+                return res;
+            }
+
             foreach (var geom in cutRes)
             {
                 var cutArcLn = geom as Polyline;
@@ -560,8 +591,13 @@ namespace Esri
                         var endPt = cutArcPts[cutArcPts.Count-1];
                         var endAz = this.Center.GeodesicAzimuthTo(endPt);
 
-                        var resArc = new GeodesicArc(this.Center, this.Radius, this.DensifyDist, cutArcPts, startAz, endAz);
-                        res.Add(resArc);
+                        var len = GetLength(this.Radius, startAz, endAz);
+                        if (!Geodesic.IsZeroLength(len))
+                        { 
+                            var resArc = new GeodesicArc(this.Center, this.Radius, this.DensifyDist, cutArcPts, startAz, endAz, len);
+                            this.InitCuttedSegment(resArc);
+                            res.Add(resArc);
+                        }
                     }
                 }
             }

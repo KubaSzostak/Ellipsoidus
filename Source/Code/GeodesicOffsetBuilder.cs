@@ -24,7 +24,7 @@ namespace Esri
         private readonly Polygon CuttingPolygon = null;
 
 
-        public GeodesicPolyline SourceLine { get; private set; }
+        public GeodesicPolyline ReferenceLine { get; private set; }
         public double BufferDist { get; private set; }
         public TimeSpan BuildTime { get; private set; }
 
@@ -32,16 +32,16 @@ namespace Esri
 
         public GeodesicOffsetBuilder(GeodesicPolyline ln, double dist, GeodesicPolyline cuttingLine )
         {
-            this.SourceLine = ln;
+            this.ReferenceLine = ln;
             this.BufferDist = dist;
 
             if (cuttingLine != null)
             {
                 this.CuttingLine = cuttingLine;
                 var plgPoints = new List<MapPoint>(CuttingLine.DensifyPoints);
-                for (int i = this.SourceLine.DensifyPoints.Count - 1; i >= 0; i--)
+                for (int i = this.ReferenceLine.DensifyPoints.Count - 1; i >= 0; i--)
                 {
-                    var pt = this.SourceLine.DensifyPoints[i];
+                    var pt = this.ReferenceLine.DensifyPoints[i];
                     plgPoints.Add(pt);
                 }
                 this.CuttingPolygon = new Polygon(plgPoints);
@@ -67,7 +67,6 @@ namespace Esri
             this.BuildSegments();
             this.RemoveSegmentsOutOfCuttingLine();
 
-
             sw.Stop();
             this.BuildTime = sw.Elapsed;
         }
@@ -84,7 +83,7 @@ namespace Esri
             var minBufferDist = this.BufferDist - NETGeographicLib.GeodesicUtils.DistanceEpsilon * 20.0;  // Probably ArcGIS limitation to 2mm
             foreach (var pt in points)
             {
-                var dist = this.SourceLine.GeodesicDistTo(pt);
+                var dist = this.ReferenceLine.GeodesicDistTo(pt);
                 if (dist < minBufferDist)
                     return true;                
             }
@@ -196,31 +195,75 @@ namespace Esri
             this.OffsetLines.Clear();
             this.OffsetArcs.Clear();
 
-            for (int i = 0; i < this.SourceLine.Lines.Count; i++)
+            for (int i = 0; i < this.ReferenceLine.Lines.Count; i++)
             {
-                var ln = this.SourceLine.Lines[i];
+                var ln = this.ReferenceLine.Lines[i];
                 var offsetLn = ln.Offset(-dist);
+                this.OffsetLines.Add(offsetLn);
 
                 this.AddAuxiliary(ln.StartPoint, offsetLn.StartPoint);
                 this.AddAuxiliary(ln.EndPoint, offsetLn.EndPoint);
 
                 GeodesicArc arc = BuildArc(prevLn, ln, dist);
-                if (arc != null)
+                if (arc != null) 
+                {
                     this.OffsetArcs.Add(arc);
-
-                this.OffsetLines.Add(offsetLn);
-                if (i > 0)
+                }
+                else if (i > 0)
                 {
                     var prevOffsetLn = this.OffsetLines[i - 1]; // make a copy
-                    this.OffsetLines[i - 1] = CutOutLine(prevOffsetLn, offsetLn);
-                    this.OffsetLines[i] = CutOutLine(offsetLn, prevOffsetLn); // use the copy
+                    if (!prevOffsetLn.EndPoint.IsEqual2d(offsetLn.StartPoint)) // they can be parallel
+                    {
+                        var cuttedPrevOffsetLn = CutOutLine(prevOffsetLn, offsetLn);
+                        var cuttedOffsetLn = CutOutLine(offsetLn, prevOffsetLn); // use the copy
+
+                        if ((prevOffsetLn != cuttedPrevOffsetLn) || (offsetLn != cuttedOffsetLn))
+                        {
+                            this.OffsetLines[i - 1] = cuttedOffsetLn;
+                            this.OffsetLines[i] = cuttedPrevOffsetLn;
+
+                            // if they are quasi-parallel, e.g. (StartAz-EndAz) = 0.0004" tricky things happens due to round/calulation errors
+                            // just add missing line
+                            //BuildLinesAndArcsCheckAndFix(cuttedPrevOffsetLn, cuttedOffsetLn);
+                        };
+                    }
                 }
 
                 prevLn = ln;
             }
-            var lastLn = this.SourceLine.Lines[this.SourceLine.Lines.Count - 1];
+            var lastLn = this.ReferenceLine.Lines[this.ReferenceLine.Lines.Count - 1];
             var lastArc = BuildArc(lastLn, null, dist);
             this.OffsetArcs.Add(lastArc);
+        }
+
+        private void BuildLinesAndArcsCheckAndFix(GeodesicOffsetLine prevOffsetLn, GeodesicOffsetLine offsetLn)
+        {
+            if (prevOffsetLn.EndPoint.IsEqual2d(offsetLn.StartPoint))
+                return;
+
+            // OffsetDist: 22 224 m
+            // ----------------------------------
+            // Deviation: 0.1 mm -> Length: 2.1 m
+            // Deviation: 1.0 mm -> Length: 6.6 m
+            // Deviation: 10  mm -> Length: 21  m
+            // Deviation: 100 mm -> Length: 67  m
+ 
+            double len;
+            NETGeographicLib.GeodesicUtils.WGS84.Inverse(prevOffsetLn.EndPoint.ToGeoPoint(), offsetLn.StartPoint.ToGeoPoint(), out len);
+            if (len < 5.0)
+            {
+                var points = new MapPoint[] {prevOffsetLn.EndPoint, offsetLn.StartPoint};
+                var midLn = new GeodesicOffsetLine(points, offsetLn.ReferenceLine, offsetLn.OffsetDist, len);
+                this.OffsetLines.Add(offsetLn);
+            }
+            else
+            {
+                Trace.TraceError(this.GetType().Name + ".BuildLinesAndArcs() computation dead end.");
+                Trace.Indent();
+                Trace.TraceError("Reference line: " + offsetLn.ReferenceLine.ToString());
+                Trace.TraceError("Offset line: " + offsetLn.ToString());
+                Trace.Unindent();
+            }
         }
 
         private double GetMinDist(GeodesicLineSegment srcLn, GeodesicOffsetLine ln)
@@ -230,47 +273,85 @@ namespace Esri
             return Math.Min(spDist, epDist);
         }
 
+        private List<GeodesicOffsetLine> RemoveEmptySegments(List<GeodesicOffsetLine> segments)
+        {
+            var removedSegments = new List<GeodesicOffsetLine>();
+
+            for (int i = segments.Count - 1; i >= 0; i--)
+            {
+                if (Geodesic.IsZeroLength(segments[i].Length))
+                {
+                    removedSegments.Add(segments[i]);
+                    segments.RemoveAt(i);
+                }
+            }
+
+            return removedSegments;
+        }
+
+        private string GetSegmentsInfoText(List<GeodesicOffsetLine> segments, string header)
+        {
+            string res = "";
+            foreach (var s in segments)
+            {
+                res += "\r\n" + s.ToString();
+            }
+
+            if (!string.IsNullOrEmpty(res) && !string.IsNullOrEmpty(header))
+                res = header + res;
+
+            return res;
+        }
+
         public GeodesicOffsetLine CutOutLine( GeodesicOffsetLine ln, GeodesicOffsetLine cutter)
         {
             var cutRes = ln.Cut(cutter);
-            
-            for (int i = cutRes.Count - 1; i >= 0; i--)
-            {
-                if (cutRes[i].Length < NETGeographicLib.GeodesicUtils.DistanceEpsilon * 0.1)
-                    cutRes.RemoveAt(i);
-            }
 
-            if (cutRes.Count > 2)
+            if ((cutRes.Count == 1) && (cutRes[0] == ln))
             {
-                var resInfo = "\r\n";
-                foreach (var cr in cutRes)
-                {
-                    resInfo += "\r\n" + cr.ToString() + ", Lenght: " + cr.Length.ToString("0.0000");
-                }
-                throw new Exception("ERROR: " + base.GetType().Name + ".CutLines() inconsistent result" + resInfo);
-            }
-            if (cutRes.Count < 1)
-            {
-                var cutRes2 = ln.Cut(cutter);
-                Trace.Write(cutRes2);
                 return ln;
             }
-            if (cutRes.Count < 2)
-            {
+
+            var removedSegments = RemoveEmptySegments(cutRes);
+            if (cutRes.Count == 1) 
                 return cutRes[0];
+
+            var removedSegmentsInfo = GetSegmentsInfoText(removedSegments, "\r\n\r\n" + "Removed segments: ");
+
+            if (cutRes.Count < 1)
+            {
+                throw new Exception("ERROR: Empty " + this.GetType().Name + ".CutOutLine() result." + removedSegmentsInfo);
+            }
+            if (cutRes.Count > 2)
+            {
+                var cutResSegmentsInfo = GetSegmentsInfoText(cutRes, "\r\n" + "Segments: ");
+                throw new Exception("ERROR: " + base.GetType().Name + ".CutLines() inconsistent result" + cutResSegmentsInfo + removedSegmentsInfo);
             }
 
             // cutRes.Count == 2
 
             var cut0 = cutRes[0];
             var cut1 = cutRes[1];
-            cut0.UpdateOrigin("Cut");
-            cut1.UpdateOrigin("Cut");
 
-            var cut0Dist = GetMinDist(cutter.SourceLine, cut0); 
-            var cut1Dist = GetMinDist(cutter.SourceLine, cut1);
+            var minCut0Dist = GetMinDist(cutter.ReferenceLine, cut0); 
+            var minCut1Dist = GetMinDist(cutter.ReferenceLine, cut1);
 
-            if (cut0Dist < cut1Dist)
+            // this happens if lines are quasi-parallel
+            if (Geodesic.IsZeroLength(Math.Abs(cut0.OffsetDist) - minCut0Dist) && Geodesic.IsZeroLength(Math.Abs(cut1.OffsetDist) - minCut1Dist))
+            {
+                if (cut0.Length < cut1.Length)
+                {
+                    this.CuttedLines.Add(cut0);
+                    return cut1;
+                }
+                else
+                {
+                    this.CuttedLines.Add(cut1);
+                    return cut0;
+                }    
+            }
+
+            if (minCut0Dist < minCut1Dist)
             {
                 this.CuttedLines.Add(cut0);
                 return cut1;

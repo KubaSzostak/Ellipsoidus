@@ -122,5 +122,21 @@ namespace Esri
         {
             return GeodesicLineSegment.Create(ln.Point1.ToMapPoint(), ln.Point2.ToMapPoint());
         }
+
+        public static double GeodesicLength(this IList<MapPoint> points)
+        {
+            if (points.Count < 1)
+                return 0.0;
+
+            var wgs = NETGeographicLib.GeodesicUtils.WGS84;
+            double lenSum = 0.0;
+            for (int i = 0; i < points.Count - 1; i++)
+            {
+                double len;
+                wgs.Inverse(points[i].ToGeoPoint(), points[i + 1].ToGeoPoint(), out len);
+                lenSum += len;
+            }
+            return lenSum;
+        }
     }
 }

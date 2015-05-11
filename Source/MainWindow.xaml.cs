@@ -568,7 +568,7 @@ namespace Ellipsoidus
             Utils.SaveToFile(points, txtDir + "offset-points.txt", maxDev);
             Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt", maxDev);
 
-            ShapeFile.SaveLineCombo(this.OffsetBuilder.SourceLine.Lines, shpDir + "base-line.shp", maxDev);
+            ShapeFile.SaveLineCombo(this.OffsetBuilder.ReferenceLine.Lines, shpDir + "base-line.shp", maxDev);
             Utils.SaveToFile(this.BaseLine.Vertices, txtDir + "base-line.txt", maxDev);
 
             var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);

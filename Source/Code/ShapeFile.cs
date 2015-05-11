@@ -79,7 +79,7 @@ namespace Esri
                     var feature = shp.AddFeature(geom);
 
                     if (segm is GeodesicOffsetLine)
-                        feature.DataRow["src_geom"] = (segm as GeodesicOffsetLine).SourceLine.ToString();
+                        feature.DataRow["src_geom"] = (segm as GeodesicOffsetLine).ReferenceLine.ToString();
 
                     if (segm is GeodesicArc)
                         feature.DataRow["src_point"] = (segm as GeodesicArc).Center.Id;
