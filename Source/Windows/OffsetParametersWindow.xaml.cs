@@ -19,22 +19,19 @@ namespace Ellipsoidus.Windows
     /// </summary>
     public partial class OffsetParametersWindow : Window
     {
-        private string oldPrec;
-        private string oldDist;
-
         public OffsetParametersWindow()
         {
             this.InitializeComponent();
-            this.precBox.Text = 0.1.ToString();
+            this.maxDevBox.Text = 0.1.ToString();
         }
 
-        public double Precision
+        public double MaxDeviation
         {
             get
             {
-                if (string.IsNullOrEmpty(this.precBox.Text))
+                if (string.IsNullOrEmpty(this.maxDevBox.Text))
                     return double.NaN;
-                return double.Parse(this.precBox.Text);
+                return double.Parse(this.maxDevBox.Text);
             }
         }
 
@@ -45,37 +42,31 @@ namespace Ellipsoidus.Windows
 
         private void okButton_Click(object sender, RoutedEventArgs e)
         {
-            double maxPrec = Math.Min(this.Distance * 0.001, 1000.0);
-            if (this.Precision < 0.001 || this.Precision > 1000.0)
+            double maxPrec = Math.Min(this.Distance * 0.1, 1000.0);
+            if (this.MaxDeviation < 0.001 || this.MaxDeviation > maxPrec)
             {
-                MessageBox.Show("Precision must be between 0.001 and 1000.0");
+                MessageBox.Show("Max deviation must be between 0.001 and " + maxPrec.ToString("0.0"));
+                return;
             }
-            else if (this.Distance <= 1.0)
+            if (this.Distance <= 1.0)
             {
                 MessageBox.Show("Distance must be greater than 1.0");
+                return;
             }
-            else
-            {
-                base.DialogResult = new bool?(true);
-                base.Close();
-            }
+            base.DialogResult = true;
+            base.Close();
         }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {
-            this.precBox.Text = this.oldPrec;
-            this.distBox.Text = this.oldDist;
+            this.Close();
         }
 
-        public bool ShowDialog(bool precisionEnabled, bool distEnabled)
+        public bool ShowDialog(bool precisionEnabled)
         {
-            this.oldPrec = this.precBox.Text;
-            this.oldDist = this.distBox.Text;
 
-            this.precBox.IsEnabled = precisionEnabled;
-            this.distBox.IsEnabled = distEnabled;
-            if (!distEnabled)
-                this.Title = "Precision parameters";
+            if (!precisionEnabled)
+                maxDevPanel.Visibility = Visibility.Collapsed;
 
             return base.ShowDialog() == true;
         }

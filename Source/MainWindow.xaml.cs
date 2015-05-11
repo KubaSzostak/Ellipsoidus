@@ -2,6 +2,7 @@
 using Ellipsoidus.Windows;
 using Esri;
 using Esri.ArcGISRuntime.Controls;
+using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Layers;
 using Microsoft.Win32;
@@ -95,6 +96,7 @@ namespace Ellipsoidus
 
 		public async Task StartProgress(Task task, string info)
 		{
+            this.HideInfoBox();
             this.progressBar.IsIndeterminate = true; // start animation from beginning
 
 			this.progressBox.Visibility = Visibility.Visible;
@@ -122,29 +124,41 @@ namespace Ellipsoidus
             Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
 		}
 
-		private void MyMapView_LayerLoaded(object sender, LayerLoadedEventArgs e)
+
+
+		private async void MyMapView_LayerLoaded(object sender, LayerLoadedEventArgs e)
 		{
 			if (e.LoadError != null)
 			{
-                var errMsg = string.Format("Error while loading layer '{0}': \r\n - {1}", e.Layer.ID, e.LoadError.Message);
-				if (e.LoadError.InnerException != null)
-				{
-                    errMsg += "\r\n - " + e.LoadError.InnerException.Message;
-				}
-
                 if (e.Layer == this.BasemapLayer)
                 {
-                    errMsg += "\r\n - Check internet connection.";
-                    errMsg += "\r\n\r\n" + "Basemap will be not displayed";
-                    this.ShowInfoBox(errMsg);
+                    await LoadCountriesShapefile();
                 }
                 else
                 {
+                    var errMsg = string.Format("Error while loading layer '{0}': \r\n - {1}", e.Layer.ID, e.LoadError.Message);
+                    if (e.LoadError.InnerException != null)
+                    {
+                        errMsg += "\r\n - " + e.LoadError.InnerException.Message;
+                    }
                     MessageBox.Show(errMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 					Application.Current.Shutdown();
                 }
 			}
 		}
+
+        private async Task LoadCountriesShapefile()
+        {
+            var shpPath = Path.Combine(ExeDir, "ExportTemplate", "shp", "countries.shp");
+            var shpData = await ShapefileTable.OpenAsync(shpPath);
+            var shpLayer = new FeatureLayer(shpData) 
+            { 
+                ID="Countries",
+                DisplayName="Countries",
+                Opacity=0.3
+            };
+            this.MapView.Map.Layers.Insert(0, shpLayer);
+        }
 
 		private void MyMapView_MouseMove(object sender, MouseEventArgs e)
 		{
@@ -182,9 +196,9 @@ namespace Ellipsoidus
 			else
 			{
                 var paramsWnd = new OffsetParametersWindow();
-				if (paramsWnd.ShowDialog(true, true))
+				if (paramsWnd.ShowDialog(true))
 				{
-					this.AddBuffer(paramsWnd.Distance, paramsWnd.Precision);
+					this.AddBuffer(paramsWnd.Distance, paramsWnd.MaxDeviation);
 				}
 			}
 		}
@@ -198,7 +212,7 @@ namespace Ellipsoidus
 			else
 			{
                 var paramsWnd = new OffsetParametersWindow();
-				if (paramsWnd.ShowDialog(false, true))
+				if (paramsWnd.ShowDialog(false))
 				{
 					this.AddOffset(paramsWnd.Distance);
 				}
@@ -257,7 +271,7 @@ namespace Ellipsoidus
             var endPoint = await this.PickPoint();
 
             var offsetParametersWindow = new OffsetParametersWindow();
-			if (offsetParametersWindow.ShowDialog(false, true))
+			if (offsetParametersWindow.ShowDialog(true))
 			{
 				GeodesicParallelLineDeviationsTest test = new GeodesicParallelLineDeviationsTest(startPoint, endPoint, offsetParametersWindow.Distance);
 				test.Layer = this.TestsLayer;
@@ -446,24 +460,7 @@ namespace Ellipsoidus
 				}
 			}
 		}
-
-		private string GetFolderPathDlg()
-		{
-            
-            var dlg = new System.Windows.Forms.FolderBrowserDialog();
-            dlg.Description = "Select Shapefiles + MXD output folder";
-            dlg.SelectedPath = this.Settings.ExportOutputDir; 
-
-            var result = dlg.ShowDialog();
-            if (result == System.Windows.Forms.DialogResult.OK)
-            {
-                this.Settings.ExportOutputDir = dlg.SelectedPath;
-                return dlg.SelectedPath;
-            }
-            return null;
-
-		}
-
+        
         private List<GeodesicMapPoint> LoadPointsFromFileDialog()
         {
             var dlg = new OpenFileDialog();
@@ -497,35 +494,29 @@ namespace Ellipsoidus
                 return;
 			}
 
-            var dlg = new SaveFileDialog();
-            dlg.Filter = "Shapefiles|*.shp";
-            dlg.AddExtension = true;
-            dlg.InitialDirectory = Path.GetDirectoryName(this.Settings.LoadBaseLineFile);
-            dlg.FileName = Path.GetFileNameWithoutExtension(this.Settings.LoadBaseLineFile) + ".shp";
-
-            if (dlg.ShowDialog() != true)
+            var exportOpts = new ExportOptionsWindow();
+            if (!exportOpts.ShowDialog(Path.GetDirectoryName(this.Settings.LoadBaseLineFile)))
                 return;
 
-            this.Settings.LoadBaseLineFile = dlg.FileName;
-            var fn = Path.ChangeExtension(dlg.FileName, null);
+            var fn = Path.Combine(exportOpts.FolderPath, Path.GetFileNameWithoutExtension(this.Settings.LoadBaseLineFile));
 
             ShapeFile.SaveLine(this.BaseLine.Vertices, fn + ".shp");
 
             ShapeFile.SavePoints(this.BaseLine.Vertices, fn + "-points.shp");
-            Utils.SaveToFile(this.BaseLine.Vertices, fn + "-points.txt", 0.1);
+            Utils.SaveToFile(this.BaseLine.Vertices, fn + "-points.txt");
 
             ShapeFile.SaveLineDensify(this.BaseLine.Lines, fn + "-geodesic.shp");
 
 
-            ShowInfoBox("Exported.");
+            ShowInfoBox("Exported to " + fn + ".shp");
         }
 
         private void CopyWordShp(string destDir)
         {
             try
             {
-                var srcFile = Path.Combine(ExeDir, "ExportTemplate", "shp", "world");
-                var destFile = Path.Combine(destDir, "world");
+                var srcFile = Path.Combine(ExeDir, "ExportTemplate", "shp", "countries");
+                var destFile = Path.Combine(destDir, "countries");
 
                 if (File.Exists(destFile + ".shp"))
                     return;
@@ -533,14 +524,17 @@ namespace Ellipsoidus
                 File.Copy(srcFile + ".dbf", destFile + ".dbf");
                 File.Copy(srcFile + ".prj", destFile + ".prj");
                 File.Copy(srcFile + ".shp", destFile + ".shp");
-                File.Copy(srcFile + ".shpx", destFile + ".shpx");
                 File.Copy(srcFile + ".shx", destFile + ".shx");
+                File.Copy(srcFile + ".txt", destFile + ".txt");
             }
             catch { }
         }
         
         private void UpdateDensifyPoints(IEnumerable<MapPoint> points)
         {
+            /*
+             * For testing only
+             * 
             this.DensifyLayer.Dispatcher.Invoke(() =>
             {
                 this.DensifyLayer.Graphics.Clear();
@@ -551,6 +545,7 @@ namespace Ellipsoidus
                 this.DensifyLayer.Add(dln, Symbols.Black2.DashLine);
                 this.DensifyLayer.Add(dpts, Symbols.Black2.Point);
             });
+             */
         }
 
         private void ExportOffsetData(string destDir, double maxDev)
@@ -565,11 +560,11 @@ namespace Ellipsoidus
             Directory.CreateDirectory(txtDir);
 
             var points = ShapeFile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev);
-            Utils.SaveToFile(points, txtDir + "offset-points.txt", maxDev);
-            Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt", maxDev);
+            Utils.SaveToFile(points, txtDir + "offset-points.txt");
+            Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt");
 
             ShapeFile.SaveLineCombo(this.OffsetBuilder.ReferenceLine.Lines, shpDir + "base-line.shp", maxDev);
-            Utils.SaveToFile(this.BaseLine.Vertices, txtDir + "base-line.txt", maxDev);
+            Utils.SaveToFile(this.BaseLine.Vertices, txtDir + "base-line.txt");
 
             var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);
             ShapeFile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri-buff.shp", maxDev);
@@ -597,16 +592,13 @@ namespace Ellipsoidus
                 return;
 			}
 
-            // TODO: make one export dialog windw
-            var paramsWnd = new OffsetParametersWindow();
-			if (!paramsWnd.ShowDialog(true, false))
+            var exportOpts = new ExportOptionsWindow();
+            if (!exportOpts.ShowDialog(this.Settings.ExportOutputDir))
                 return;
 
-			string folderPath = this.GetFolderPathDlg();
-            if (string.IsNullOrEmpty(folderPath))
-                return;
+            this.Settings.ExportOutputDir = exportOpts.FolderPath;
 
-            await  this.StartProgress(ExportOffsetDataAsync(folderPath, paramsWnd.Precision), "Exporting offset data...");
+            await this.StartProgress(ExportOffsetDataAsync(exportOpts.FolderPath, exportOpts.MaxDeviation), "Exporting offset data...");
             //ExportOffsetData(folderPath, paramsWnd.Precision);
             ShowInfoBox("Exported.");
 		}
@@ -722,7 +714,10 @@ namespace Ellipsoidus
             if (points == null)
                 return;
 
-            var fn = Path.ChangeExtension(this.Settings.LoadBaseLineFile, null) + "-dist-raport.txt";
+            var outDir = Path.ChangeExtension(this.Settings.LoadBaseLineFile, null) + "-dist-raport" + Path.DirectorySeparatorChar;
+            Directory.CreateDirectory(outDir);
+            var fn = outDir + Path.GetFileName(this.Settings.LoadBaseLineFile);
+
             await this.StartProgress(GenerateDistToBaseLineRaportAsync(points, fn), "Calculating...");
             this.ShowInfoBox("Saved to " + fn);
         }

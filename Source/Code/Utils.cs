@@ -48,7 +48,7 @@ namespace System
             angle = (angle - min) * 60; // seconds
             var sec = angle;
 
-            return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(secPrecision) + '"';
+            return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(secPrecision).Replace(",", ".") + '"';
         }
 
         public static string ToDegString(double angle)
@@ -161,26 +161,8 @@ namespace System
             }
             return res;
         }
-
-        public static void SaveToFile(IEnumerable<GeodesicMapPoint> points, string filePath, double linearPrec)
-        {
-            var lines = new List<string>();
-            var i = 0;
-
-            foreach (var pt in points)
-            {
-                i++;
-                var id = pt.Id;
-                if (string.IsNullOrWhiteSpace(id))
-                    id = "#" + i.ToString();
-
-                var ln = id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y, linearPrec).PadLeft(15) + "  " + ToDegMinSecString(pt.X, linearPrec).PadLeft(15);
-                lines.Add(ln);
-            }
-            IO.File.WriteAllLines(filePath, lines, Encoding.UTF8);
-        }
-
-        public static void SaveToFile(string filePath, IEnumerable<MapPoint> points, string header = null)
+        
+        public static void SaveToFile(IEnumerable<MapPoint> points, string filePath, string header = null)
         {
             var lines = new List<string>();
 
@@ -190,15 +172,15 @@ namespace System
                 lines.Add("");
             }
 
-            int id = 1;
+            var i = 0;
             foreach (var pt in points)
             {
+                i++;
                 var ptg = pt.Cast();
                 if (string.IsNullOrWhiteSpace(ptg.Id))
-                {
-                    ptg.Id = id++.ToString();
-                }
-                var ln = Utils.WgsPointToSTring(ptg);
+                    ptg.Id = "#" + i.ToString();
+
+                var ln = ptg.Id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y, Utils.SecPrecision).PadLeft(15) + "  " + ToDegMinSecString(pt.X, Utils.SecPrecision).PadLeft(15);
                 lines.Add(ln);
             }
 
