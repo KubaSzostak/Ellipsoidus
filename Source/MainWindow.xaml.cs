@@ -21,6 +21,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Threading;
@@ -534,7 +535,7 @@ namespace Ellipsoidus
         {
             /*
              * For testing only
-             * 
+             */ 
             this.DensifyLayer.Dispatcher.Invoke(() =>
             {
                 this.DensifyLayer.Graphics.Clear();
@@ -545,7 +546,7 @@ namespace Ellipsoidus
                 this.DensifyLayer.Add(dln, Symbols.Black2.DashLine);
                 this.DensifyLayer.Add(dpts, Symbols.Black2.Point);
             });
-             */
+             /**/
         }
 
         private void ExportOffsetData(string destDir, double maxDev)
@@ -720,6 +721,84 @@ namespace Ellipsoidus
 
             await this.StartProgress(GenerateDistToBaseLineRaportAsync(points, fn), "Calculating...");
             this.ShowInfoBox("Saved to " + fn);
+        }
+
+        public static RenderTargetBitmap GetMapImage(MapView view)
+        {
+            Size size = new Size(view.ActualWidth, view.ActualHeight);
+            if (size.IsEmpty)
+                return null;
+
+            RenderTargetBitmap result = new RenderTargetBitmap((int)size.Width, (int)size.Height, 96, 96, PixelFormats.Pbgra32);
+
+            DrawingVisual drawingvisual = new DrawingVisual();
+            using (DrawingContext context = drawingvisual.RenderOpen())
+            {
+                context.DrawRectangle(new VisualBrush(view), null, new Rect(new Point(), size));
+                context.Close();
+            }
+
+            result.Render(drawingvisual);
+            return result;
+        }
+
+        public void SaveMapToStream(Stream stm)
+        {
+            var src = GetMapImage(this.MapView);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(src));
+            encoder.Save(stm);
+        }
+
+        /// <summary> 
+        /// Copies a UI element to the clipboard as an image, and as text.
+        /// </summary> 
+        /// <param name="element">The element to copy.</param> 
+        public static void CopyUIElementToClipboard(FrameworkElement element)
+        {
+            // Based on http://elegantcode.com/2010/12/13/wpfcopy-uielement-to-clipboard-as-multiple-formats/
+
+            //data object to hold our different formats representing the element
+            DataObject dataObject = new DataObject();
+            //lets start with the text representation 
+            //to make is easy we will just assume the object set as the DataContext has the ToString method overrideen and we use that as the text
+            var text = element.ToString();
+            if (element.DataContext != null)
+                text = element.DataContext.ToString();
+            dataObject.SetData(DataFormats.Text, text, true);
+
+            //now lets do the image representation 
+            double width = element.ActualWidth;
+            double height = element.ActualHeight;
+            RenderTargetBitmap bmpCopied = new RenderTargetBitmap((int)Math.Round(width), (int)Math.Round(height), 96, 96, PixelFormats.Default);
+            DrawingVisual dv = new DrawingVisual();
+            using (DrawingContext dc = dv.RenderOpen())
+            {
+                VisualBrush vb = new VisualBrush(element);
+                dc.DrawRectangle(vb, null, new Rect(new Point(), new Size(width, height)));
+            }
+            bmpCopied.Render(dv);
+            dataObject.SetData(DataFormats.Bitmap, bmpCopied, true);
+
+            //now place our object in the clipboard 
+            Clipboard.SetDataObject(dataObject, true);
+        }
+
+        private void copyToClipboard_Click(object sender, RoutedEventArgs e)
+        {
+            CopyUIElementToClipboard(this.MapView);
+        }
+
+        private void saveMapToFile_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog();
+            dlg.Filter = "PNG files|*.png";
+            if (dlg.ShowDialog() != true)
+                return;
+            using (var stm = dlg.OpenFile())
+            {
+                SaveMapToStream(stm);
+            }
         }
     }
 }
