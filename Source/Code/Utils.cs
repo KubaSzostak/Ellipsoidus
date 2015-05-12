@@ -51,6 +51,11 @@ namespace System
             return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(secPrecision).Replace(",", ".") + '"';
         }
 
+        public static string ToDegMinSecString(double angle)
+        {
+            return ToDegMinSecString(angle, Utils.SecPrecision);
+        }
+
         public static string ToDegString(double angle)
         {
             return angle.ToString("0.00000000") + "°";

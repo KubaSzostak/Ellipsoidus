@@ -24,6 +24,8 @@ namespace Esri
                 shp.DataTable.Columns.Add(new DataColumn("point_id", typeof(string)));
                 shp.DataTable.Columns.Add(new DataColumn("latitude", typeof(double)));
                 shp.DataTable.Columns.Add(new DataColumn("longitude", typeof(double)));
+                shp.DataTable.Columns.Add(new DataColumn("lat_dms", typeof(string)));
+                shp.DataTable.Columns.Add(new DataColumn("lon_dms", typeof(string)));
                 shp.DataTable.Columns.Add(new DataColumn("src_geom", typeof(string)));
                 shp.DataTable.Columns.Add(new DataColumn("src_point", typeof(string)));
                 shp.DataTable.Columns.Add(new DataColumn("origin", typeof(string)));
@@ -39,6 +41,8 @@ namespace Esri
                     feature.DataRow["point_id"] = ptg.Id;
                     feature.DataRow["latitude"] = ptg.Y;
                     feature.DataRow["longitude"] = ptg.X;
+                    feature.DataRow["lat_dms"] = Utils.ToDegMinSecString(ptg.Y);
+                    feature.DataRow["lon_dms"] = Utils.ToDegMinSecString(ptg.X);
 
                     if (ptg.SourceGeometry != null)
                         feature.DataRow["src_geom"] = ptg.SourceGeometry.ToString();
@@ -65,6 +69,7 @@ namespace Esri
             shp.DataTable.Columns.Add(new DataColumn("max_dev", typeof(double)));
             shp.DataTable.Columns.Add(new DataColumn("deviation", typeof(double)));
             shp.DataTable.Columns.Add(new DataColumn("geo_len", typeof(double)));
+            shp.DataTable.Columns.Add(new DataColumn("segm_type", typeof(string)));
 
             return shp;
         }
@@ -78,12 +83,18 @@ namespace Esri
                     var geom = segm.DensifyPoints.GetLineStringFeature();
                     var feature = shp.AddFeature(geom);
 
-                    if (segm is GeodesicOffsetLine)
+                    if (segm is GeodesicOffsetLine) 
+                    { 
                         feature.DataRow["src_geom"] = (segm as GeodesicOffsetLine).ReferenceLine.ToString();
+                    }
 
                     if (segm is GeodesicArc)
+                    {
+                        feature.DataRow["src_geom"] = "Point"; 
                         feature.DataRow["src_point"] = (segm as GeodesicArc).Center.Id;
-
+                    }
+                    feature.DataRow["segm_type"] = segm.GetType().Name;
+                    feature.DataRow["geo_len"] = segm.Length;
                     feature.DataRow["origin"] = segm.Origin;
                 }
 
@@ -119,6 +130,8 @@ namespace Esri
 
                 feature.DataRow["max_dev"] = maxDeviation;
                 feature.DataRow["origin"] = "Ellipsoidus";
+
+                feature.DataRow["segm_type"] = "GeodesicDensifyLine";
 
                 shp.SaveAs(filePath, true);
             }
