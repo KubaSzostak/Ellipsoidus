@@ -37,7 +37,7 @@ namespace System
 
             angle = (angle - min) * 60.0; // seconds
             var sec = Math.Round(angle, SecDecPlaces + 3, MidpointRounding.ToEven); // remove rounding precision noise  ("0.000": 36.032500000002443 -> 36.032500)
-            sec = Math.Round(sec, secDecPlaces, MidpointRounding.ToEven);           // without above fix result will be 36.033 (valid result is 36.032)
+            sec = Math.Round(sec, secDecPlaces, MidpointRounding.ToEven);           // without above fix result would be 36.033, but it should be 36.032
 
             var secPrec = "00";
             if (secDecPlaces > 0)
