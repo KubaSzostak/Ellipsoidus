@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -49,7 +50,8 @@ namespace Ellipsoidus
         private Settings Settings = Settings.Default;
 
 		public MainWindow()
-		{
+        {
+            InitNumberFormat();
 			this.InitializeComponent();
             ExeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
             if (string.IsNullOrEmpty(Settings.LoadBaseLineFile))
@@ -74,6 +76,14 @@ namespace Ellipsoidus
 			this.progressBox.Visibility = Visibility.Collapsed;
 			this.progressBar.IsIndeterminate = true;
 		}
+
+        private void InitNumberFormat()
+        {
+            var clt = new CultureInfo(Thread.CurrentThread.CurrentCulture.LCID);
+            clt.NumberFormat.NumberDecimalSeparator = ".";
+
+            Thread.CurrentThread.CurrentCulture = clt;
+        }
 
         private void Window_Closed(object sender, EventArgs e)
         {

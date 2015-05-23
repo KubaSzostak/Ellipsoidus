@@ -12,7 +12,7 @@ namespace System
 {
     public class Utils
     {
-        public static string SecPrecision = "00.00";
+        public static int SecDecPlaces = 2;
 
         private static string TextFilePaht = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Ellipsoidus.txt");
 
@@ -28,32 +28,29 @@ namespace System
             Process.Start(Utils.TextFilePaht);
         }
 
-        public static string ToDegMinSecString(double angle, double linearPrec)
-        {
-            if (linearPrec > 0.4)
-                return ToDegMinSecString(angle, "00.00");
-            else if (linearPrec > 0.5)
-                return ToDegMinSecString(angle, "00.000");
-            else
-                return ToDegMinSecString(angle, "00.0000");
-        }
-
-        public static string ToDegMinSecString(double angle, string secPrecision)
+        public static string ToDegMinSecString(double angle, int secDecPlaces)
         {
             var deg = Math.Floor(angle);
 
-            angle = (angle - deg) * 60; // minutes
+            angle = (angle - deg) * 60.0; // minutes
             var min = Math.Floor(angle);
 
-            angle = (angle - min) * 60; // seconds
-            var sec = angle;
+            angle = (angle - min) * 60.0; // seconds
+            var sec = Math.Round(angle, SecDecPlaces + 3, MidpointRounding.ToEven); // remove rounding precision noise  ("0.000": 36.032500000002443 -> 36.032500)
+            sec = Math.Round(sec, secDecPlaces, MidpointRounding.ToEven);           // without above fix result will be 36.033 (valid result is 36.032)
 
-            return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(secPrecision).Replace(",", ".") + '"';
+            var secPrec = "00";
+            if (secDecPlaces > 0)
+            {
+                secPrec = secPrec + "." + new string('0', secDecPlaces);
+            }
+
+            return deg.ToString("0") + "°" + min.ToString("00") + "'" + sec.ToString(secPrec).Replace(",", ".") + '"';
         }
 
         public static string ToDegMinSecString(double angle)
         {
-            return ToDegMinSecString(angle, Utils.SecPrecision);
+            return ToDegMinSecString(angle, Utils.SecDecPlaces);
         }
 
         public static string ToDegString(double angle)
@@ -185,7 +182,7 @@ namespace System
                 if (string.IsNullOrWhiteSpace(ptg.Id))
                     ptg.Id = "#" + i.ToString();
 
-                var ln = ptg.Id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y, Utils.SecPrecision).PadLeft(15) + "  " + ToDegMinSecString(pt.X, Utils.SecPrecision).PadLeft(15);
+                var ln = ptg.Id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y).PadLeft(15) + "  " + ToDegMinSecString(pt.X).PadLeft(15);
                 lines.Add(ln);
             }
 
