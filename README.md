@@ -7,6 +7,8 @@ Ellipsoidus calculates lines every point of which is at specyfied distance from 
 * See it in action on [YouTube](https://www.youtube.com/playlist?list=PL6ZtrotaJvdaTUcoXuyhNHX9XHFFO7nLr)
 * Read [Ellipsoidus Wiki](https://github.com/kubaszostak/ellipsoidus/wiki)
 
+This program is not a competition for professional software like *Caris LOTS* that can do everything and even more. Ellipsoidus is dedicated to do only one thing (generate offset line on ellipsoid surface) and it do it in the most effective way.
+
 ### Download
 https://github.com/kubaszostak/ellipsoidus/releases
 
