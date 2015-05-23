@@ -80,7 +80,7 @@ namespace Ellipsoidus
             this.Raport.AddLineInfo(this.SourceLine, "SourceLine");
             this.Raport.AddLineInfo(this.OffsetLine, "OffsetLine");
             this.Raport.AddPoint(maxDevSrcLnPt, "Point on SourceLine");
-            this.Raport.Add("Orhto-Azimuth on SourceLine: " + Utils.ToDegString(maxDevAzimuth));
+            this.Raport.Add("Orhto-Azimuth on SourceLine: " + Utils.ToDegMinSecString(maxDevAzimuth));
             this.Raport.Add("Offset distance: " + this.OffsetDist.ToString("0.000"));
             this.Raport.AddLn();
             this.Raport.AddPoint(maxDevSrcLnOffsetPt, "Orthogonal offset from SourceLine");

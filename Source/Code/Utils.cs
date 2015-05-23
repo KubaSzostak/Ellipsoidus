@@ -12,7 +12,7 @@ namespace System
 {
     public class Utils
     {
-        public static int SecDecPlaces = 2;
+        public static int SecDecPlaces = 4;
 
         private static string TextFilePaht = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Ellipsoidus.txt");
 
@@ -51,11 +51,6 @@ namespace System
         public static string ToDegMinSecString(double angle)
         {
             return ToDegMinSecString(angle, Utils.SecDecPlaces);
-        }
-
-        public static string ToDegString(double angle)
-        {
-            return angle.ToString("0.00000000") + "°";
         }
 
         public static double StringToDeg(string s)
@@ -97,16 +92,16 @@ namespace System
                 id += "  ";
             }
 
-            return id + Utils.ToDegString(pt.Y) + "  " + Utils.ToDegString(pt.X);
+            return id + Utils.ToDegMinSecString(pt.Y) + "  " + Utils.ToDegMinSecString(pt.X);
         }
 
         public static string DistToString(GeodesicLineSegment ln)
         {
             var dist = ln.Length;
             if (dist > 0.1)
-                return ln.Length.ToString("0.000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
+                return ln.Length.ToString("0.000") + " (" + Utils.ToDegMinSecString(ln.ArcLength) + ")";
             else
-                return ln.Length.ToString("0.0000") + " (" + Utils.ToDegString(ln.ArcLength) + ")";
+                return ln.Length.ToString("0.0000") + " (" + Utils.ToDegMinSecString(ln.ArcLength) + ")";
         }
 
         public static string RoundDist(double dist)

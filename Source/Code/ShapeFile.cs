@@ -1,6 +1,7 @@
 ﻿using DotSpatial.Data;
 using DotSpatial.Projections;
 using DotSpatial.Topology;
+using AGG = Esri.ArcGISRuntime.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -15,7 +16,7 @@ namespace Esri
 
     public class ShapeFile
     {
-        public static void SavePoints(IEnumerable<GeodesicMapPoint> points, string filePath)
+        public static void SavePoints(IEnumerable<AGG.GeodesicMapPoint> points, string filePath)
         {
             using (var shp = new PointShapefile())
             {             
@@ -74,7 +75,7 @@ namespace Esri
             return shp;
         }
 
-        public static void SaveLineSegments(IEnumerable<GeodesicSegment> segments, string filePath)
+        public static void SaveLineSegments(IEnumerable<AGG.GeodesicSegment> segments, string filePath)
         {   
             using (var shp = NewLineShapefile())
             {
@@ -83,15 +84,15 @@ namespace Esri
                     var geom = segm.DensifyPoints.GetLineStringFeature();
                     var feature = shp.AddFeature(geom);
 
-                    if (segm is GeodesicOffsetLine) 
-                    { 
-                        feature.DataRow["src_geom"] = (segm as GeodesicOffsetLine).ReferenceLine.ToString();
+                    if (segm is AGG.GeodesicOffsetLine) 
+                    {
+                        feature.DataRow["src_geom"] = (segm as AGG.GeodesicOffsetLine).ReferenceLine.ToString();
                     }
 
-                    if (segm is GeodesicArc)
+                    if (segm is AGG.GeodesicArc)
                     {
-                        feature.DataRow["src_geom"] = "Point"; 
-                        feature.DataRow["src_point"] = (segm as GeodesicArc).Center.Id;
+                        feature.DataRow["src_geom"] = "Point";
+                        feature.DataRow["src_point"] = (segm as AGG.GeodesicArc).Center.Id;
                     }
                     feature.DataRow["segm_type"] = segm.GetType().Name;
                     feature.DataRow["geo_len"] = segm.Length;
@@ -105,7 +106,7 @@ namespace Esri
         /// <summary>
         /// Save line with extreme precision
         /// </summary>
-        public static void SaveLineDensify(IEnumerable<GeodesicSegment> segments, string filePath)
+        public static void SaveLineDensify(IEnumerable<AGG.GeodesicSegment> segments, string filePath)
         {
             using (var shp = NewLineShapefile())
             {
@@ -120,7 +121,7 @@ namespace Esri
             }
         }
 
-        public static void SaveLineDensify(IEnumerable<GeodesicSegment> segments, string filePath, double maxDeviation)
+        public static void SaveLineDensify(IEnumerable<AGG.GeodesicSegment> segments, string filePath, double maxDeviation)
         {
             using (var shp = NewLineShapefile())
             {
@@ -150,7 +151,7 @@ namespace Esri
 
 
 
-        public static IEnumerable<GeodesicMapPoint> SaveLineCombo(IEnumerable<GeodesicSegment> segments, string filePath, double maxDeviation)
+        public static IEnumerable<AGG.GeodesicMapPoint> SaveLineCombo(IEnumerable<AGG.GeodesicSegment> segments, string filePath, double maxDeviation)
         {
             string fn = Path.ChangeExtension(filePath, null);
 

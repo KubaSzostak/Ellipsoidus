@@ -106,14 +106,20 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ArcGISRuntime\ArcGISRuntimeEx.cs" />
+    <Compile Include="Code\Ellipsoidus.cs" />
     <Compile Include="Code\GeographicLibExtensions.cs" />
     <Compile Include="Code\GeographicLib.cs" />
-    <Compile Include="ArcGISRuntime\MapPointEx.cs" />
+    <Compile Include="Code\GeodesicMapPoint.cs" />
     <Compile Include="ArcGISRuntime\Symbols.cs" />
     <Compile Include="Code\Geodesic.cs" />
     <Compile Include="Code\GeodesicEx.cs" />
     <Compile Include="Code\GeodesicOffsetBuilder.cs" />
     <Compile Include="Code\GnonomicProjection.cs" />
+    <Compile Include="Windows\GeodesicPresenter.cs" />
+    <Compile Include="Windows\LineLineIntersectionPanel.xaml.cs">
+      <DependentUpon>LineLineIntersectionPanel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\LineLineIntersectionPresenter.cs" />
     <Compile Include="Code\RaportText.cs" />
     <Compile Include="Code\ShapeFile.cs" />
     <Compile Include="Code\Utils.cs" />
@@ -122,8 +128,18 @@
     <Compile Include="Windows\ExportOptionsWindow.xaml.cs">
       <DependentUpon>ExportOptionsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\ModernUiIcons.cs" />
     <Compile Include="Windows\OffsetParametersWindow.xaml.cs">
       <DependentUpon>OffsetParametersWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\PointLabel.xaml.cs">
+      <DependentUpon>PointLabel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\PointListWindow.xaml.cs">
+      <DependentUpon>PointListWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\SideBar.xaml.cs">
+      <DependentUpon>SideBar.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -141,7 +157,23 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Windows\LineLineIntersectionPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\OffsetParametersWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\PointLabel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\PointListWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\SideBar.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

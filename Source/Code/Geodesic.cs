@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Esri
+namespace Esri.ArcGISRuntime.Geometry
 {
 
     public class Geodesic
@@ -188,6 +188,11 @@ namespace Esri
         public double GeodesicDistTo(MapPoint point)
         {
             return this.Line.DistTo(point.ToGeoPoint());
+        }
+
+        public MapPoint IntersectionPoint(GeodesicLineSegment other)
+        {
+            return this.Line.IntersectionPoint(other.Line).ToMapPoint();
         }
 
         public GeodesicProximity NearestCoordinate(MapPoint point)

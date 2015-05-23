@@ -12,16 +12,20 @@ namespace System
     {
         public static PlanarPoint Forward(this Gnomonic gn, GeoPoint center, GeoPoint point)
         {
-            var res = new PlanarPoint();
-            gn.Forward(center.Lat, center.Lon, point.Lat, point.Lon, out res.X, out res.Y);
-            return res;
+            double x;
+            double y;
+            gn.Forward(center.Lat, center.Lon, point.Lat, point.Lon, out x, out y);
+
+            return new PlanarPoint(x, y);
         }
 
         public static GeoPoint Reverse(this Gnomonic gn, GeoPoint center, PlanarPoint point)
         {
-            var res = new GeoPoint();
-            gn.Reverse(center.Lat, center.Lon, point.X, point.Y, out res.Lat, out res.Lon);
-            return res;
+            double lat;
+            double lon;
+            gn.Reverse(center.Lat, center.Lon, point.X, point.Y, out lat, out lon);
+
+            return new GeoPoint(lat, lon);
         }
 
         public static double Inverse(this Geodesic g, GeoPoint p1, GeoPoint p2, out double s12)
@@ -42,41 +46,53 @@ namespace System
 
         public static GeoPoint ArcDirect(this Geodesic g, GeoPoint p1, double azi1, double a12)
         {
-            var p2 = new GeoPoint();
-            g.ArcDirect(p1.Lat, p1.Lon, azi1, a12, out p2.Lat, out p2.Lon);
-            return p2;
+            double lat;
+            double lon;
+            g.ArcDirect(p1.Lat, p1.Lon, azi1, a12, out lat, out lon);
+
+            return new GeoPoint(lat, lon);
         }
         public static GeoPoint ArcDirect(this Geodesic g, GeoPoint p1, double azi1, double a12, out double azi2)
         {
-            var p2 = new GeoPoint();
-            g.ArcDirect(p1.Lat, p1.Lon, azi1, a12, out p2.Lat, out p2.Lon, out azi2);
-            return p2;
+            double lat;
+            double lon;
+            g.ArcDirect(p1.Lat, p1.Lon, azi1, a12, out lat, out lon, out azi2);
+
+            return new GeoPoint(lat, lon);
         }
         public static GeoPoint ArcDirect(this Geodesic g, GeoPoint p1, double azi1, double a12, out double azi2, out double s12)
         {
-            var p2 = new GeoPoint();
-            g.ArcDirect(p1.Lat, p1.Lon, azi1, a12, out p2.Lat, out p2.Lon, out azi2, out s12);
-            return p2;
+            double lat;
+            double lon;
+            g.ArcDirect(p1.Lat, p1.Lon, azi1, a12, out lat, out lon, out azi2, out s12);
+
+            return new GeoPoint(lat, lon);
         }
 
 
         public static GeoPoint Direct(this Geodesic g, GeoPoint p1, double azi1, double s12)
         {
-            var p2 = new GeoPoint();
-            g.Direct(p1.Lat, p1.Lon, azi1, s12, out p2.Lat, out p2.Lon);
-            return p2;
+            double lat;
+            double lon;
+            g.Direct(p1.Lat, p1.Lon, azi1, s12, out lat, out lon);
+
+            return new GeoPoint(lat, lon);
         }
         public static GeoPoint Direct(this Geodesic g, GeoPoint p1, double azi1, double s12, out double arc)
         {
-            var p2 = new GeoPoint();
-            arc = g.Direct(p1.Lat, p1.Lon, azi1, s12, out p2.Lat, out p2.Lon);
-            return p2;
+            double lat;
+            double lon;
+            arc = g.Direct(p1.Lat, p1.Lon, azi1, s12, out lat, out lon);
+
+            return new GeoPoint(lat, lon);
         }
         public static GeoPoint Direct(this Geodesic g, GeoPoint p1, double azi1, double s12, out double arc, out double azi2)
         {
-            var p2 = new GeoPoint();
-            arc = g.Direct(p1.Lat, p1.Lon, azi1, s12, out p2.Lat, out p2.Lon, out azi2);
-            return p2;
+            double lat;
+            double lon;
+            arc = g.Direct(p1.Lat, p1.Lon, azi1, s12, out lat, out lon, out azi2);
+
+            return new GeoPoint(lat, lon);
         }
 
     }

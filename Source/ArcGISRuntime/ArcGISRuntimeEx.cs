@@ -1,4 +1,5 @@
-﻿using Esri.ArcGISRuntime.Geometry;
+﻿using Esri;
+using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Layers;
 using Esri.ArcGISRuntime.Symbology;
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 
 
 
-namespace Esri
+namespace System
 {
     
 
@@ -95,6 +96,9 @@ namespace Esri
 
         public static bool IsEqual2d(this MapPoint point, MapPoint other)
         {
+            if (other == null)
+                return false;
+
             var eps = NETGeographicLib.GeodesicUtils.ArcEpsilon * 2.0;
             var dx = Math.Abs(point.X - other.X);
             var dy = Math.Abs(point.Y - other.Y);
@@ -142,7 +146,7 @@ namespace Esri
             {
                 point = (GeometryEngine.Project(point, SpatialReferences.Wgs84) as MapPoint);
             }
-            return new NETGeographicLib.GeoPoint() { Lat = point.Y, Lon = point.X };
+            return new NETGeographicLib.GeoPoint(point.Y, point.X);
         }
 
         public static MapPoint ToMapPoint(this NETGeographicLib.GeoPoint point)

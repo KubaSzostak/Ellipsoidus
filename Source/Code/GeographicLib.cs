@@ -53,8 +53,8 @@ namespace NETGeographicLib
 
     public class GeodesicLineSegment 
     {
-        public readonly GeoPoint Point1 = new GeoPoint();
-        public readonly GeoPoint Point2 = new GeoPoint();
+        public readonly GeoPoint Point1;
+        public readonly GeoPoint Point2;
 
         public readonly double Azi1;
         public readonly double Azi2;
@@ -84,41 +84,55 @@ namespace NETGeographicLib
 
         public GeoPoint ArcPosition(double arc)
         {
-            var res = new GeoPoint();
-            Line.ArcPosition(arc, out res.Lat, out res.Lon);
-            return res;
+            double lat;
+            double lon;
+            Line.ArcPosition(arc, out lat, out lon);
+
+            return new GeoPoint(lat, lon);
         }
         public GeoPoint ArcPosition(double arc, out double azi)
         {
-            var res = new GeoPoint();
-            Line.ArcPosition(arc, out res.Lat, out res.Lon, out azi);
-            return res;
+            double lat;
+            double lon;
+            Line.ArcPosition(arc, out lat, out lon, out azi);
+
+            return new GeoPoint(lat, lon);
         }
         public GeoPoint ArcPosition(double arc, out double azi, out double s)
         {
-            var res = new GeoPoint();
-            Line.ArcPosition(arc, out res.Lat, out res.Lon, out azi, out s);
-            return res;
+            double lat;
+            double lon;
+            Line.ArcPosition(arc, out lat, out lon, out azi, out s);
+
+            return new GeoPoint(lat, lon);
         }
 
         public GeoPoint Position(double s)
         {
-            var res = new GeoPoint();
-            Line.Position(s, out res.Lat, out res.Lon);
-            return res;
+            double lat;
+            double lon;
+            Line.Position(s, out lat, out lon);
+
+            return new GeoPoint(lat, lon);
         }
         public GeoPoint Position(double s, out double arc)
         {
-            var res = new GeoPoint();
-            arc = Line.Position(s, out res.Lat, out res.Lon);
-            return res;
+            double lat;
+            double lon;
+            arc = Line.Position(s, out lat, out lon);
+
+            return new GeoPoint(lat, lon);
         }
         public GeoPoint Position(double s, out double arc, out double azi)
         {
-            var res = new GeoPoint();
-            arc =  Line.Position(s, out res.Lat, out res.Lon, out azi);
-            return res;
+            double lat;
+            double lon;
+            arc = Line.Position(s, out lat, out lon, out azi);
+
+            return new GeoPoint(lat, lon);
         }
+
+
 
         public GeoPoint NearestCoordinate(GeoPoint point, out bool perpendicularCross)
         {
@@ -147,9 +161,9 @@ namespace NETGeographicLib
 
             perpendicularCross = true;
 
-            var estimatedRes = new GeoPoint();
-            estimatedRes.Lat = (this.Point1.Lat + this.Point2.Lat) * 0.5;
-            estimatedRes.Lon = (this.Point1.Lon + this.Point2.Lon) * 0.5;
+            var lat = (this.Point1.Lat + this.Point2.Lat) * 0.5;
+            var lon = (this.Point1.Lon + this.Point2.Lon) * 0.5;
+            var estimatedRes = new GeoPoint(lat, lon);
 
             do
             {
@@ -190,6 +204,37 @@ namespace NETGeographicLib
             return res;
         }
 
+        private GeoPoint GnomonicIntersection(GeodesicLineSegment other, GeoPoint estimatedIntersection)
+        {
+            var gn = this.Gnonomic;
+            var center = estimatedIntersection;
+
+            var tp1 = gn.Forward(center, this.Point1);
+            var tp2 = gn.Forward(center, this.Point2);
+            var tln = new PlanarLine(tp1, tp2);
+
+            var op1 = gn.Forward(center, other.Point1);
+            var op2 = gn.Forward(center, other.Point2);
+            var oln = new PlanarLine(op1, op2);
+
+            var pRes = tln.Intersection(oln);
+            return gn.Reverse(center, pRes);
+        }
+
+        public GeoPoint IntersectionPoint(GeodesicLineSegment other)
+        {
+            var estimatedRes = this.ArcPosition(this.Arc12 * 0.5); // MidPoint
+            do
+            {
+                var res = GnomonicIntersection(other, estimatedRes);
+                if (res.IsEqual2d(estimatedRes))
+                    return res;
+                estimatedRes = res;
+            }
+            while (true);
+
+        }
+
         public List<GeoPoint> GetDensifyPoints(double maxSegmentLength)
         {
             double segmentCount = Math.Ceiling(this.Dist12 / maxSegmentLength);
@@ -215,8 +260,14 @@ namespace NETGeographicLib
 
     public class GeoPoint
     {
-        public double Lat = double.NaN;
-        public double Lon = double.NaN;
+        public readonly double Lat = double.NaN;
+        public readonly double Lon = double.NaN;
+
+        public GeoPoint(double lat, double lon)
+        {
+            this.Lat = lat;
+            this.Lon = lon;
+        }
 
         public bool IsEqual2d(GeoPoint other)
         {
@@ -239,8 +290,14 @@ namespace NETGeographicLib
 
     public class PlanarPoint
     {
-        public double X = double.NaN;
-        public double Y = double.NaN;
+        public readonly double X = double.NaN;
+        public readonly double Y = double.NaN;
+
+        public PlanarPoint(double x, double y)
+        {
+            this.X = x;
+            this.Y = y;
+        }
 
         public bool IsEqual2d(PlanarPoint other)
         {
@@ -266,12 +323,22 @@ namespace NETGeographicLib
         public readonly double A;
         public readonly double B;
         public readonly double C;
+        public readonly double DeltaX;
+        public readonly double DeltaY;
+        public readonly double Length;
 
         public PlanarLine(PlanarPoint p1, PlanarPoint p2)
         {
             A = p2.Y - p1.Y;
             B = p1.X - p2.X;
             C = p1.Y * p2.X - p1.X * p2.Y;
+
+            DeltaX = p2.X - p1.X;
+            DeltaY = p2.Y - p1.Y;
+            Length = Math.Sqrt(DeltaX * DeltaX + DeltaY * DeltaY);
+
+            if (Length == 0)
+                throw new Exception("Line length must be greater than 0.0 ");
         }
 
         public PlanarLine(double a, double b, double c)
@@ -290,14 +357,12 @@ namespace NETGeographicLib
         {
             var w = this.A * other.B - other.A * this.B;
             if (w == 0)
-                throw new Exception(this.GetType().Name + ".Intersection() impossible - parallel lines.");
+                throw new Exception("Intersection impossible - parallel lines.");
 
             var wx = -this.C * other.B + other.C * this.B;
             var wy = -this.A * other.C + other.A * this.C;
 
-            var res = new PlanarPoint();
-            res.X = wx / w;
-            res.Y = wy / w;
+            var res = new PlanarPoint(wx / w, wy / w);
 
             return res;
         }

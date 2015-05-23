@@ -1,9 +1,13 @@
 ﻿<Application x:Class="Ellipsoidus.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:Ellipsoidus.Windows"
              Startup="Application_Startup"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ui:ModernUIIcons x:Key="ModernUIIcons" />
+        </ResourceDictionary>
+
     </Application.Resources>
 </Application>

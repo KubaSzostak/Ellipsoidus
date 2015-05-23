@@ -25,9 +25,17 @@ namespace Esri
         public static Symbols Magenta2 = new Symbols(System.Windows.Media.Colors.Magenta, 2.0);
         public static Symbols Magenta3 = new Symbols(System.Windows.Media.Colors.Magenta, 3.0);
 
+        public static Symbols Maroon1 = new Symbols(System.Windows.Media.Colors.Maroon, 1.0);
+        public static Symbols Maroon2 = new Symbols(System.Windows.Media.Colors.Maroon, 2.0);
+        public static Symbols Maroon3 = new Symbols(System.Windows.Media.Colors.Maroon, 3.0);
+
         public static Symbols Orange1 = new Symbols(System.Windows.Media.Colors.Orange, 1.0);
         public static Symbols Orange2 = new Symbols(System.Windows.Media.Colors.Orange, 2.0);
         public static Symbols Orange3 = new Symbols(System.Windows.Media.Colors.Orange, 3.0);
+
+        public static Symbols Green1 = new Symbols(System.Windows.Media.Colors.Green, 1.0);
+        public static Symbols Green2 = new Symbols(System.Windows.Media.Colors.Green, 2.0);
+        public static Symbols Green3 = new Symbols(System.Windows.Media.Colors.Green, 3.0);
 
         public SimpleMarkerSymbol Point;
         public SimpleMarkerSymbol Cross;
