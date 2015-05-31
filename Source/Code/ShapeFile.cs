@@ -16,12 +16,13 @@ namespace Esri
 
     public class ShapeFile
     {
-        public static void SavePoints(IEnumerable<AGG.GeodesicMapPoint> points, string filePath)
+        public static void SavePoints(IEnumerable<AGG.GeodesicMapPoint> points, string filePath, int firstPointNo)
         {
             using (var shp = new PointShapefile())
             {             
                 shp.Projection = ProjectionInfo.FromEpsgCode(4326);
 
+                shp.DataTable.Columns.Add(new DataColumn("point_no", typeof(int)));
                 shp.DataTable.Columns.Add(new DataColumn("point_id", typeof(string)));
                 shp.DataTable.Columns.Add(new DataColumn("latitude", typeof(double)));
                 shp.DataTable.Columns.Add(new DataColumn("longitude", typeof(double)));
@@ -31,6 +32,9 @@ namespace Esri
                 shp.DataTable.Columns.Add(new DataColumn("src_point", typeof(string)));
                 shp.DataTable.Columns.Add(new DataColumn("origin", typeof(string)));
 
+                if (firstPointNo < 0)
+                    firstPointNo = 1;
+
                 foreach (var pt in points)
                 {
                     var ptg = pt.Cast();
@@ -39,6 +43,7 @@ namespace Esri
                     var feature = shp.AddFeature(geom);
 
                     feature.DataRow.BeginEdit();
+                    feature.DataRow["point_no"] = firstPointNo++;
                     feature.DataRow["point_id"] = ptg.Id;
                     feature.DataRow["latitude"] = ptg.Y;
                     feature.DataRow["longitude"] = ptg.X;
@@ -151,7 +156,7 @@ namespace Esri
 
 
 
-        public static IEnumerable<AGG.GeodesicMapPoint> SaveLineCombo(IEnumerable<AGG.GeodesicSegment> segments, string filePath, double maxDeviation)
+        public static IEnumerable<AGG.GeodesicMapPoint> SaveLineCombo(IEnumerable<AGG.GeodesicSegment> segments, string filePath, double maxDeviation, int firstPointNo)
         {
             string fn = Path.ChangeExtension(filePath, null);
 
@@ -159,12 +164,12 @@ namespace Esri
             SaveLineDensify(segments, fn + "-geodesic.shp");
             SaveLineSegments(segments, fn + "-segments.shp");
 
-            SavePoints(segments.GetVertices(), fn + "-vertices.shp");
+            SavePoints(segments.GetVertices(), fn + "-vertices.shp", 1);
 
             // Parallel line can have additional points between vertices. The same as SaveLineDensify(segments, fn, _maxDev_).
             var points = segments.GetGeodesicDensifyPoints(maxDeviation).ToGeodesicPoints();
             points.UpdateOrigin("Densify");
-            SavePoints(points, fn + "-points.shp");
+            SavePoints(points, fn + "-points.shp", firstPointNo);
 
             return points;
         }

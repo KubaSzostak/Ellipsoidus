@@ -69,6 +69,8 @@ namespace Ellipsoidus
 			this.OffsetResultsLayer.AddLineLabelling(Symbols.Magenta2, "Value");
             this.OffsetResultsLayer.AddPointLabelling(Symbols.Red1, "Id");
 
+            this.CuttingLineLayer.AddPointLabelling(Symbols.Gray1, "Id");
+
             this.MapView.Cursor = Presenter.MapCursor;
 
 			this.hideInfoTimer.Elapsed += delegate(object s, ElapsedEventArgs e)
@@ -497,7 +499,7 @@ namespace Ellipsoidus
 
             ShapeFile.SaveLine(Ellipsoidus.Presenter.BaseLine.Vertices, fn + ".shp");
 
-            ShapeFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.shp");
+            ShapeFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.shp", exportOpts.FirstPointNo);
             Utils.SaveToFile(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.txt");
 
             ShapeFile.SaveLineDensify(Ellipsoidus.Presenter.BaseLine.Lines, fn + "-geodesic.shp");
@@ -543,7 +545,7 @@ namespace Ellipsoidus
              /**/
         }
 
-        private void ExportOffsetData(string destDir, double maxDev)
+        private void ExportOffsetData(string destDir, double maxDev, int firstPointNo)
         {
             var densiyfyPts = this.OffsetBuilder.OffsetSegments.GetGeodesicDensifyPoints(maxDev);
             UpdateDensifyPoints(densiyfyPts);
@@ -554,11 +556,11 @@ namespace Ellipsoidus
             var txtDir = Path.Combine(destDir, "txt") + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(txtDir);
 
-            var points = ShapeFile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev);
+            var points = ShapeFile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev, firstPointNo);
             Utils.SaveToFile(points, txtDir + "offset-points.txt");
             Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt");
 
-            ShapeFile.SaveLineCombo(this.OffsetBuilder.ReferenceLine.Lines, shpDir + "base-line.shp", maxDev);
+            ShapeFile.SaveLineCombo(this.OffsetBuilder.ReferenceLine.Lines, shpDir + "base-line.shp", maxDev, firstPointNo);
             Utils.SaveToFile(Ellipsoidus.Presenter.BaseLine.Vertices, txtDir + "base-line.txt");
 
             var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);
@@ -573,9 +575,9 @@ namespace Ellipsoidus
             CopyWordShp(shpDir);
         }
 
-        public Task ExportOffsetDataAsync(string destDir, double maxDev)
+        public Task ExportOffsetDataAsync(string destDir, double maxDev, int firstPointNo)
         {
-            var action = new Action(() => { ExportOffsetData(destDir, maxDev); } );
+            var action = new Action(() => { ExportOffsetData(destDir, maxDev, firstPointNo); } );
             return Task.Run(action, CancellationToken.None);
         }
 
@@ -593,7 +595,7 @@ namespace Ellipsoidus
 
             this.Settings.ExportOutputDir = exportOpts.FolderPath;
 
-            await this.StartProgress(ExportOffsetDataAsync(exportOpts.FolderPath, exportOpts.MaxDeviation), "Exporting offset data...");
+            await this.StartProgress(ExportOffsetDataAsync(exportOpts.FolderPath, exportOpts.MaxDeviation, exportOpts.FirstPointNo), "Exporting offset data...");
             //ExportOffsetData(folderPath, paramsWnd.Precision);
             ShowInfoBox("Exported.");
 		}
@@ -685,7 +687,7 @@ namespace Ellipsoidus
             rap.Add("Max deviation: " + devList.Max().ToString("0.000"));
             rap.Add("Min deviation: " + devList.Min().ToString("0.000"));
 
-            ShapeFile.SavePoints(points, fnShp + "-points.shp");
+            ShapeFile.SavePoints(points, fnShp + "-points.shp", 1);
 
             rap.SaveToFile(fileName);
 

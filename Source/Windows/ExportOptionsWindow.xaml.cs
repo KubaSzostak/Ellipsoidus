@@ -35,6 +35,14 @@ namespace Ellipsoidus.Windows
             }
         }
 
+        public int FirstPointNo
+        {
+            get
+            {
+                return int.Parse(this.firtPointNoBox.Text);
+            }
+        }
+
         public string FolderPath
         {
             get
@@ -55,6 +63,11 @@ namespace Ellipsoidus.Windows
                 MessageBox.Show("Max deviation must be between 0.001 and 1000.0");
                 return;
             }
+            if (this.FirstPointNo < 1)
+            {
+                MessageBox.Show("First point number must be greater than 1");
+                return;
+            }
             var pathRoot = Path.GetPathRoot(FolderPath);
             if (!Path.IsPathRooted(pathRoot))
             {
@@ -63,6 +76,7 @@ namespace Ellipsoidus.Windows
             }
             Directory.CreateDirectory(FolderPath);
             Utils.SecDecPlaces = this.secPrecBox.SelectedIndex;
+
 
             base.DialogResult = true;
             base.Close();

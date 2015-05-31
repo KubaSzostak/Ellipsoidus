@@ -22,6 +22,11 @@
             <Button Grid.Column="1" Content="Browse..." Margin="8,0,0,0" Click="browseForFolderClick"/>
         </Grid>
         <Canvas Margin="4" />
+        
+        <TextBlock><Run Text="First point number"/></TextBlock>
+        <TextBox x:Name="firtPointNoBox" Width="180" HorizontalAlignment="Left" Text="1001"/>        
+        <Canvas Margin="4" />
+        
         <TextBlock><Run Text="Max deviation [m]"/></TextBlock>
         <TextBox x:Name="maxDevBox" Width="180" HorizontalAlignment="Left" Text="0.1"/>
         <Canvas Margin="4" />

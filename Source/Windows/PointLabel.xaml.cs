@@ -49,7 +49,7 @@ namespace Ellipsoidus.Windows
         }
         public static readonly DependencyProperty PointProperty =
             DependencyProperty.Register("Point", typeof(GeodesicMapPoint), typeof(PointLabel),
-            new FrameworkPropertyMetadata(GeodesicPresenter.RandomPoint(""), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+            new FrameworkPropertyMetadata(Presenter.RandomPoint(""), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
 
         public string Text

@@ -21,18 +21,11 @@ namespace Ellipsoidus
             }
         }
 
-        private static Random Rnd = new Random();
-        public static GeodesicMapPoint RandomPoint(string id)
-        {
-            var x = 12.0 +Rnd.NextDouble() * 50;
-            var y = 12.0 +Rnd.NextDouble() * 50;
-            return new GeodesicMapPoint(id, x, y);
-        }
     }
 
     public class GeodesicPointPresenter : GeodesicPresenter
     {
-        private GeodesicMapPoint _point = GeodesicPresenter.RandomPoint("");
+        private GeodesicMapPoint _point = Presenter.RandomPoint("");
         public GeodesicMapPoint Point
         {
             get { return _point; }
