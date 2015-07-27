@@ -45,6 +45,7 @@ namespace Esri
                     feature.DataRow.BeginEdit();
                     feature.DataRow["point_no"] = firstPointNo++;
                     feature.DataRow["point_id"] = ptg.Id;
+
                     feature.DataRow["latitude"] = ptg.Y;
                     feature.DataRow["longitude"] = ptg.X;
                     feature.DataRow["lat_dms"] = Utils.ToDegMinSecString(ptg.Y);

@@ -28,7 +28,7 @@
 
                         <esri:GraphicsLayer ID="CuttingLineLayer" x:Name="CuttingLineLayer" DisplayName="Cutting line" />
                         <esri:GraphicsLayer ID="TestsLayer" x:Name="TestsLayer" DisplayName="Tests" />
-                        <esri:GraphicsLayer ID="DensifyLayer" x:Name="DensifyLayer" DisplayName="Densify points" IsVisible="True" />
+                        <esri:GraphicsLayer ID="DensifyLayer" x:Name="DensifyLayer" DisplayName="Densify points" IsVisible="False" />
                         <esri:GraphicsLayer ID="SourceLineProjectedLayer" x:Name="SourceLineProjectedLayer" DisplayName="Base line (projected)" IsVisible="False" />
                         <esri:GraphicsLayer ID="SourceLineGeodesicLayer" x:Name="SourceLineGeodesicLayer" DisplayName="Base line (geodesic)" />
                         <esri:GraphicsLayer ID="BufferLayer" x:Name="BufferLayer" DisplayName="ESRI Buffer" />
@@ -140,6 +140,7 @@
                 <CheckBox Content="{Binding DisplayName, ElementName=OffsetCuttedLinesLayer}" IsChecked="{Binding IsVisible, ElementName=OffsetCuttedLinesLayer}" />
                 <CheckBox Content="{Binding DisplayName, ElementName=OffsetSourceAuxiliaryLinesLayer}" IsChecked="{Binding IsVisible, ElementName=OffsetSourceAuxiliaryLinesLayer}" />
                 <CheckBox Content="{Binding DisplayName, ElementName=OffsetOutputAuxiliaryLinesLayers}" IsChecked="{Binding IsVisible, ElementName=OffsetOutputAuxiliaryLinesLayers}" />
+                <CheckBox Content="{Binding DisplayName, ElementName=DensifyLayer}" IsChecked="{Binding IsVisible, ElementName=DensifyLayer}" />
                 <Separator />
                 <CheckBox Content="{Binding DisplayName, ElementName=TestsLayer}" IsChecked="{Binding IsVisible, ElementName=TestsLayer}" />
                 <CheckBox Content="{Binding DisplayName, ElementName=MeasurementsLayer}" IsChecked="{Binding IsVisible, ElementName=MeasurementsLayer}" />
@@ -148,6 +149,7 @@
             <Separator />
 
             <MenuItem Header="Info" Padding="4">
+                <MenuItem Header="Ellipsoidus 1.0" IsEnabled="False" FontWeight="Bold"  />
                 <MenuItem Header="kuba.szostak@gmail.com" IsEnabled="False" FontSize="10" />
                 <MenuItem Header="Ellipsoidus website" Tag="http://github.com/kubaszostak/ellipsoidus/" Click="websiteButton_Click" />
                 <Separator />
@@ -156,6 +158,7 @@
                 <MenuItem Header="GeographicLib by Charles Karney" Tag="http://geographiclib.sourceforge.net/" Click="websiteButton_Click" />
                 <MenuItem Header="DotSpatial (Shapefile Tools)" Tag="http://dotspatial.codeplex.com/"  Click="websiteButton_Click" />
             </MenuItem>
+            
         </Menu>
 
         <StatusBar Height="22" VerticalAlignment="Bottom" Grid.Row="2">

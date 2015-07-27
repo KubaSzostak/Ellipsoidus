@@ -21,3 +21,4 @@ https://github.com/kubaszostak/ellipsoidus/releases
 * Algorithms for solving geodesic problems provided by [Charles Karney's GeographicLib](http://geographiclib.sourceforge.net/)  
 * Shapefiles support provided by [DotSpatial](http://dotspatial.codeplex.com/)
 * Countries Shapefile provided by [thematicmapping.org](http://thematicmapping.org/)
+* Andrzej Bielski (Accelerator of Ellipsoidus idea)

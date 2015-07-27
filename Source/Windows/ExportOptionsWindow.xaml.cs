@@ -20,7 +20,7 @@ namespace Ellipsoidus.Windows
         public ExportOptionsWindow()
         {
             InitializeComponent();
-            this.maxDevBox.Text = 0.1.ToString();
+            this.maxDevBox.Text = (0.5).ToString();
 
             secPrecBox.SelectedIndex = 2;
         }
@@ -103,6 +103,7 @@ namespace Ellipsoidus.Windows
         public bool ShowDialog(string folderPath)
         {
             this.pathBox.Text = folderPath;
+            this.Owner = App.Current.MainWindow;
             return base.ShowDialog() == true;
         }
     }

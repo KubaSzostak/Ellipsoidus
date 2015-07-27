@@ -39,7 +39,10 @@ namespace Esri
             {
                 this.CuttingLine = cuttingLine;
                 var plgPoints = new List<MapPoint>(CuttingLine.DensifyPoints);
-                for (int i = this.ReferenceLine.DensifyPoints.Count - 1; i >= 0; i--)
+
+                // Omit first and lat densify point - they could lay out of CuttingLine
+
+                for (int i = this.ReferenceLine.DensifyPoints.Count - 2; i >= 1; i--)
                 {
                     var pt = this.ReferenceLine.DensifyPoints[i];
                     plgPoints.Add(pt);

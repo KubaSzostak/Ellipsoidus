@@ -395,6 +395,8 @@ namespace Ellipsoidus
 			}
 		}
 
+        Graphic _errorPointGraphic = null;
+
 		private async void AddOffset(double dist)
 		{
             if (Ellipsoidus.Presenter.BaseLine != null)
@@ -403,6 +405,13 @@ namespace Ellipsoidus
                 this.OffsetCuttedLinesLayer.Graphics.Clear();
                 this.OffsetResultsLayer.Graphics.Clear();
                 this.OffsetSourceAuxiliaryLinesLayer.Graphics.Clear();
+                this.DensifyLayer.Graphics.Clear();
+                if (_errorPointGraphic!=null)
+                {
+                    SourceLineGeodesicLayer.Graphics.Remove(_errorPointGraphic);
+                    _errorPointGraphic = null;
+                }
+                
 
                 this.OffsetBuilder = new GeodesicOffsetBuilder(Ellipsoidus.Presenter.BaseLine, dist, Ellipsoidus.Presenter.CuttingLine);
 				await this.StartProgress(this.OffsetBuilder.BuildAsync(), "Building offset...");
@@ -411,7 +420,7 @@ namespace Ellipsoidus
                 if (this.OffsetBuilder.SegmentErrorPoint != null)
                 {
                     OffsetBuilder.SegmentErrorPoint.Id += " # ERROR";
-                    SourceLineGeodesicLayer.Add(OffsetBuilder.SegmentErrorPoint, Symbols.Black3.Point);
+                    _errorPointGraphic = SourceLineGeodesicLayer.Add(OffsetBuilder.SegmentErrorPoint, Symbols.Black3.Point);
                     MessageBox.Show("Segment builder error! Balck point added at error location. " + OffsetBuilder.SegmentErrorPoint.Id);
                 }
 

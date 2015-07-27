@@ -10,7 +10,7 @@
         WindowStyle="ToolWindow" 
         ResizeMode="NoResize" 
         ShowInTaskbar="False" 
-        WindowStartupLocation="CenterOwner" >
+        WindowStartupLocation="CenterOwner"  >
     <StackPanel Margin="8">
         <TextBlock><Run Text="Output folder"/></TextBlock>
         <Grid>
@@ -28,7 +28,7 @@
         <Canvas Margin="4" />
         
         <TextBlock><Run Text="Max deviation [m]"/></TextBlock>
-        <TextBox x:Name="maxDevBox" Width="180" HorizontalAlignment="Left" Text="0.1"/>
+        <TextBox x:Name="maxDevBox" Width="180" HorizontalAlignment="Left" Text="0.5"/>
         <Canvas Margin="4" />
         <TextBlock><Run Text="Coordinate precision [seconds]"/></TextBlock>
         <ComboBox x:Name="secPrecBox" Width="180" HorizontalAlignment="Left">
