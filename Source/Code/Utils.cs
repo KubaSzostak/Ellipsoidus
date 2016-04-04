@@ -159,7 +159,7 @@ namespace System
             return res;
         }
         
-        public static void SaveToFile(IEnumerable<MapPoint> points, string filePath, string header = null)
+        public static void SaveToFile(IEnumerable<MapPoint> points, string filePath, int firstPointNo, string header = null)
         {
             var lines = new List<string>();
 
@@ -169,15 +169,25 @@ namespace System
                 lines.Add("");
             }
 
-            var i = 0;
+            var i = firstPointNo - 1;
+            if (i < 0)
+                i = 0;
             foreach (var pt in points)
             {
                 i++;
-                var ptg = pt.Cast();
-                if (string.IsNullOrWhiteSpace(ptg.Id))
-                    ptg.Id = "#" + i.ToString();
-
-                var ln = ptg.Id.PadLeft(8) + "  " + ToDegMinSecString(pt.Y).PadLeft(15) + "  " + ToDegMinSecString(pt.X).PadLeft(15);
+                var ptNo = i.ToString();
+                if (firstPointNo > 0)
+                {
+                    // Do nothing
+                }
+                else
+                {
+                    var ptg = pt.Cast();
+                    ptNo = ptg.Id;
+                    if (string.IsNullOrWhiteSpace(ptg.Id))
+                        ptNo = "#" + i.ToString();
+                }
+                var ln = ptNo.PadLeft(8) + "  " + ToDegMinSecString(pt.Y).PadLeft(15) + "  " + ToDegMinSecString(pt.X).PadLeft(15);
                 lines.Add(ln);
             }
 

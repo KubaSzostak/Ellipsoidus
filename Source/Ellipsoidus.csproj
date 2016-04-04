@@ -66,7 +66,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DotSpatial.Data">
-      <HintPath>..\packages\DotSpatial.Data.1.7\lib\net40-Client\DotSpatial.Data.dll</HintPath>
+      <HintPath>..\bin\DotSpatial.Data.dll</HintPath>
     </Reference>
     <Reference Include="DotSpatial.Mono">
       <HintPath>..\packages\DotSpatial.Mono.1.7\lib\net40-Client\DotSpatial.Mono.dll</HintPath>
