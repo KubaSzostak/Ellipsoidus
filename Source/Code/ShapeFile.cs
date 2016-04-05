@@ -37,7 +37,8 @@ namespace Esri
 
                 foreach (var pt in points)
                 {
-                    var ptg = pt.Cast();
+                    //var ptg = pt.Cast();
+                    var ptg = pt;
 
                     var geom = new Point(ptg.X, ptg.Y);
                     var feature = shp.AddFeature(geom);
@@ -77,6 +78,7 @@ namespace Esri
             shp.DataTable.Columns.Add(new DataColumn("deviation", typeof(double)));
             shp.DataTable.Columns.Add(new DataColumn("geo_len", typeof(double)));
             shp.DataTable.Columns.Add(new DataColumn("segm_type", typeof(string)));
+            shp.DataTable.Columns.Add(new DataColumn("coord_prec", typeof(string)));
 
             return shp;
         }
@@ -121,26 +123,40 @@ namespace Esri
                 var feature = shp.AddFeature(geom);
 
                 feature.DataRow["max_dev"] = 0.000;
+                feature.DataRow["coord_prec"] = "[MAX_PREC]";
                 feature.DataRow["origin"] = "Ellipsoidus";
+                feature.DataRow["segm_type"] = "GeodesicDensifyLine";
 
                 shp.SaveAs(filePath, true);
             }
         }
 
-        public static void SaveLineDensify(IEnumerable<AGG.GeodesicSegment> segments, string filePath, double maxDeviation)
+        public static List<AGG.GeodesicMapPoint> SaveLineDensify(IEnumerable<AGG.GeodesicSegment> segments, string filePath, double maxDeviation, int secDecPlaces)
         {
             using (var shp = NewLineShapefile())
             {
-                var points = segments.GetGeodesicDensifyPoints(maxDeviation);
-                var geom = points.GetLineStringFeature();
+                var pointsMaxPrecCoords = segments.GetGeodesicDensifyPoints(maxDeviation).ToGeodesicPoints();
+                var pointsRoundedCoords = new List<AGG.GeodesicMapPoint>();
+                foreach (var ptMaxPrec in pointsMaxPrecCoords)
+                {
+                    var xText = Utils.ToDegMinSecString(ptMaxPrec.X, secDecPlaces);
+                    var yText = Utils.ToDegMinSecString(ptMaxPrec.X, secDecPlaces);
+                    var xRounded = Utils.StringToDeg(xText);
+                    var yRounded = Utils.StringToDeg(yText);
+                    var ptRoundedCoords = new AGG.GeodesicMapPoint(ptMaxPrec.Id, xRounded, yRounded, ptMaxPrec.SpatialReference);
+                }
+
+                var geom = pointsRoundedCoords.GetLineStringFeature();
                 var feature = shp.AddFeature(geom);
 
                 feature.DataRow["max_dev"] = maxDeviation;
+                feature.DataRow["coord_prec"] = secDecPlaces.ToString();
                 feature.DataRow["origin"] = "Ellipsoidus";
-
                 feature.DataRow["segm_type"] = "GeodesicDensifyLine";
 
                 shp.SaveAs(filePath, true);
+
+                return pointsRoundedCoords;
             }
         }
 
@@ -161,7 +177,7 @@ namespace Esri
         {
             string fn = Path.ChangeExtension(filePath, null);
 
-            SaveLineDensify(segments, fn + ".shp", maxDeviation);
+            var roundedPoints = SaveLineDensify(segments, fn + ".shp", maxDeviation, Utils.SecDecPlaces);
             SaveLineDensify(segments, fn + "-geodesic.shp");
             SaveLineSegments(segments, fn + "-segments.shp");
 
@@ -170,6 +186,9 @@ namespace Esri
             // Parallel line can have additional points between vertices. The same as SaveLineDensify(segments, fn, _maxDev_).
             var points = segments.GetGeodesicDensifyPoints(maxDeviation).ToGeodesicPoints();
             points.UpdateOrigin("Densify");
+            SavePoints(points, fn + "-points-max-prec.shp", firstPointNo);
+
+            roundedPoints.UpdateOrigin("Densify");
             SavePoints(points, fn + "-points.shp", firstPointNo);
 
             return points;

@@ -82,15 +82,13 @@ namespace Ellipsoidus
             MapView.Cursor = MapCursor;
 
             var points = (geometry as Polyline).GetPoints();
-            var list = new List<GeodesicMapPoint>();
+            var list = points.ToGeodesicPoints();
 
             int num = 1;
-            foreach (var pt in points)
+            foreach (var pt in list)
             {
-                var idPt = pt.Cast();
-                idPt.UpdateOrigin("PickOnMap");
-                idPt.Id = num++.ToString();
-                list.Add(idPt);
+                pt.UpdateOrigin("PickOnMap");
+                pt.Id = num++.ToString();
             }
 
             HideInfoBox();

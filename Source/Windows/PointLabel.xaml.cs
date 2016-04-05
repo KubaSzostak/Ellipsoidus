@@ -38,7 +38,7 @@ namespace Ellipsoidus.Windows
         private async void pickOnMap_Click(object sender, RoutedEventArgs e)
         {
             var pt = await Presenter.PickPointAsync();
-            this.Point = pt.Cast();
+            this.Point = pt.Cast("PickedOnMap");
         }
 
 

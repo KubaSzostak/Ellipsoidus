@@ -31,7 +31,7 @@ namespace Ellipsoidus
         void LineChanged(object sender, PropertyChangedEventArgs e)
         {
             var pt = FirstLine.Line.IntersectionPoint(SecondLine.Line);
-            IntersectionPoint.Point = pt.Cast();
+            IntersectionPoint.Point = pt.Cast("IntersectionPoint");
             NotifyPropertyChanged("IntersectionPoint");
         }
 

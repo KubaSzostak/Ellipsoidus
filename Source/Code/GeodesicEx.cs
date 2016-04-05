@@ -39,15 +39,27 @@ namespace System
             return azi2;
         }
 
-        public static GeodesicMapPoint Cast(this MapPoint p)
+        public static GeodesicMapPoint Cast(this MapPoint p, string missedId)
         {
-            if (p is GeodesicMapPoint)
-                return p as GeodesicMapPoint;
+            var res = p as GeodesicMapPoint;
+            if (res == null)
+            {
+                if (p.HasZ)
+                    res = new GeodesicMapPoint(missedId, p.X, p.Y, p.Z, p.SpatialReference);
+                else
+                    res = new GeodesicMapPoint(missedId, p.X, p.Y, p.SpatialReference);
+            }
 
-            if (p.HasZ)
-                return new GeodesicMapPoint(null, p.X, p.Y, p.Z, p.SpatialReference);
+            if (string.IsNullOrEmpty(res.Id))
+                res.Id = missedId;
 
-            return new GeodesicMapPoint(null, p.X, p.Y, p.SpatialReference);
+            return res;
+        }
+
+        public static GeodesicMapPoint Cast(this MapPoint p, int autoId)
+        {
+
+            return p.Cast("AUTO_" + autoId.ToString("0000"));
         }
 
         public static GeodesicSegment FindByStartPoint(this IEnumerable<GeodesicSegment> segments, MapPoint point)

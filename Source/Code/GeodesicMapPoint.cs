@@ -12,39 +12,31 @@ namespace Esri.ArcGISRuntime.Geometry
         public GeodesicSegment SourceGeometry { get; set; }
         public GeodesicMapPoint SourcePoint { get; set; }
         public string Origin { get; private set; }
-        public string XText { get; private set; }
-        public string YText { get; private set; }
+        public string XText { get { return Utils.ToDegMinSecString(this.X); } }
+        public string YText { get { return Utils.ToDegMinSecString(this.Y); } }
 
         public GeodesicMapPoint(string id, double x, double y, double z, SpatialReference spatialReference)
             : base(x, y, z, spatialReference)
         {
             this.Id = id;
-            this.XText = Utils.ToDegMinSecString(x);
-            this.YText = Utils.ToDegMinSecString(y);
         }
 
         public GeodesicMapPoint(string id, double x, double y, SpatialReference spatialReference)
             : base(x, y, spatialReference)
         {
             this.Id = id;
-            this.XText = Utils.ToDegMinSecString(x);
-            this.YText = Utils.ToDegMinSecString(y);
         }
 
         public GeodesicMapPoint(MapPoint p, string id)
             : base(p.X, p.Y, p.Z, p.SpatialReference)
         {
             this.Id = id;
-            this.XText = Utils.ToDegMinSecString(p.X);
-            this.YText = Utils.ToDegMinSecString(p.Y);
         }
 
         public GeodesicMapPoint(string id, double x, double y)
             : base(x, y, SpatialReferences.Wgs84)
         {
             this.Id = id;
-            this.XText = Utils.ToDegMinSecString(x);
-            this.YText = Utils.ToDegMinSecString(y);
         }
 
         /// <summary>

@@ -130,12 +130,14 @@ namespace System
             }
         }
 
-        public static IEnumerable<GeodesicMapPoint> ToGeodesicPoints(this IEnumerable<MapPoint> points)
+        public static List<GeodesicMapPoint> ToGeodesicPoints(this IEnumerable<MapPoint> points)
         {
             var res = new List<GeodesicMapPoint>();
+
+            int autoId = 1;
             foreach (var pt in points)
             {
-                res.Add(pt.Cast());
+                res.Add(pt.Cast(autoId++));
             }
             return res;
         }

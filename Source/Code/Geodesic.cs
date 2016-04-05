@@ -40,8 +40,8 @@ namespace Esri.ArcGISRuntime.Geometry
         public GeodesicSegment(IList<MapPoint> points, double length)
             : base(points)
         {
-            this.StartPoint = points[0].Cast();
-            this.EndPoint = points[points.Count - 1].Cast();
+            this.StartPoint = points[0].Cast(1);
+            this.EndPoint = points[points.Count - 1].Cast(points.Count);
 
 
             this.DensifyPoints = points;
@@ -133,8 +133,7 @@ namespace Esri.ArcGISRuntime.Geometry
 
             double midAz;
             var mid = ln.ArcPosition(ln.Arc12 * 0.5, out midAz);
-            this.MidPoint = mid.ToMapPoint().Cast();
-            this.MidPoint.Id = "Mid(" + this.StartPoint.Id + "," + this.EndPoint.Id + ")";
+            this.MidPoint = mid.ToMapPoint().Cast("Mid(" + this.StartPoint.Id + "," + this.EndPoint.Id + ")");
 
             this.MidAzimuth = midAz;
         }
@@ -546,7 +545,7 @@ namespace Esri.ArcGISRuntime.Geometry
             points.Add(lastPt);
 
             var len = GetLength(radius, startAzimuth, endAzimuth);
-            return new GeodesicArc(center.Cast(), radius, densifyDist, points, startAzimuth, endAzimuth, len);
+            return new GeodesicArc(center.Cast("CENTER"), radius, densifyDist, points, startAzimuth, endAzimuth, len);
         }
 
         public static double GetLength(double radius, double startAzimuth, double endAzimuth)

@@ -479,7 +479,7 @@ namespace Ellipsoidus
 
             this.Settings.LoadBaseLineFile = dlg.FileName;
 
-            return Utils.LoadFromFile(dlg.FileName); 
+            return TextFile.LoadPoints(dlg.FileName); 
         }
 
         private async void loadFromFile_Click(object sender, RoutedEventArgs e)
@@ -508,8 +508,8 @@ namespace Ellipsoidus
 
             ShapeFile.SaveLine(Ellipsoidus.Presenter.BaseLine.Vertices, fn + ".shp");
 
-            ShapeFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.shp", exportOpts.FirstPointNo);
-            Utils.SaveToFile(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.txt", -1);
+            ShapeFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.shp", -1);
+            TextFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.txt", -1);
 
             ShapeFile.SaveLineDensify(Ellipsoidus.Presenter.BaseLine.Lines, fn + "-geodesic.shp");
 
@@ -562,15 +562,18 @@ namespace Ellipsoidus
             var shpDir = Path.Combine(destDir, "shp") + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(shpDir);
 
+            var shpMaxPrecDir = Path.Combine(destDir, "shp-max-prec") + Path.DirectorySeparatorChar;
+            Directory.CreateDirectory(shpMaxPrecDir);
+
             var txtDir = Path.Combine(destDir, "txt") + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(txtDir);
 
             var points = ShapeFile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev, firstPointNo);
-            Utils.SaveToFile(points, txtDir + "offset-points.txt", firstPointNo);
-            Utils.SaveToFile(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt", -1);
+            TextFile.SavePoints(points, txtDir + "offset-points.txt", firstPointNo);
+            TextFile.SavePoints(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt", -1);
 
             ShapeFile.SaveLineCombo(this.OffsetBuilder.ReferenceLine.Lines, shpDir + "base-line.shp", maxDev, firstPointNo);
-            Utils.SaveToFile(Ellipsoidus.Presenter.BaseLine.Vertices, txtDir + "base-line.txt", -1);
+            TextFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, txtDir + "base-line.txt", -1);
 
             var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);
             ShapeFile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri-buff.shp", maxDev);
