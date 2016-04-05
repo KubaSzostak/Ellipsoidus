@@ -22,3 +22,6 @@ https://github.com/kubaszostak/ellipsoidus/releases
 * Shapefiles support provided by [DotSpatial](http://dotspatial.codeplex.com/)
 * Countries Shapefile provided by [thematicmapping.org](http://thematicmapping.org/)
 * Andrzej Bielski (Accelerator of Ellipsoidus idea)
+
+
+...
