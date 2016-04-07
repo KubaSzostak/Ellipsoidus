@@ -13,19 +13,11 @@ namespace Ellipsoidus
 
     public class LineLineIntersectionPresenter : GeodesicPresenter
     {
-
-        private static Random Rnd = new Random();
-
+       
         public LineLineIntersectionPresenter()
         {
-            FirstLine = new GeodesicLineSegmentPresenter();
-            FirstLine.PropertyChanged += LineChanged;
-
-            SecondLine = new GeodesicLineSegmentPresenter();
-            SecondLine.PropertyChanged += LineChanged;
-
             IntersectionPoint = new GeodesicPointPresenter();
-            LineChanged(this, null);
+            Init();
         }
 
         void LineChanged(object sender, PropertyChangedEventArgs e)
@@ -46,6 +38,17 @@ namespace Ellipsoidus
             res = res.Union(IntersectionPoint.Point);
 
             return res;
+        }
+
+        internal void Init()
+        {
+            FirstLine = new GeodesicLineSegmentPresenter();
+            FirstLine.PropertyChanged += LineChanged;
+
+            SecondLine = new GeodesicLineSegmentPresenter();
+            SecondLine.PropertyChanged += LineChanged;
+
+            LineChanged(this, null);
         }
     }
 }

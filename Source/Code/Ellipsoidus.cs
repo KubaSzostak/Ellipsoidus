@@ -33,23 +33,21 @@ namespace Ellipsoidus
             return res;
         }
 
-        private static Envelope RandomGenExtent()
+        private static Envelope GetExtent()
         {
-            var ext = new Envelope(12, 12, 60, 60, SpatialReferences.Wgs84).Extent;
-
-            var pts = GetPoints();
-            if (pts.Count > 0)
-            {
-                ext = pts[0].Extent;
-                foreach (var pt in pts)
-                {
-                    ext = ext.Union(pt);
-                }
-                return ext;
-            }
-
             if ((Presenter.MapView != null) && (Presenter.MapView.Extent != null))
-                ext = Presenter.MapView.Extent.Expand(0.7);
+                return Presenter.MapView.Extent.Expand(0.7);
+
+            
+            var pts = GetPoints();
+            if (pts.Count < 1)
+                return new Envelope(12, 12, 60, 60, SpatialReferences.Wgs84).Extent;
+
+            var ext = pts[0].Extent;
+            foreach (var pt in pts)
+            {
+                ext = ext.Union(pt);
+            }
 
             return ext;
         }
@@ -57,7 +55,7 @@ namespace Ellipsoidus
         private static Random Rnd = new Random();
         public static GeodesicMapPoint RandomPoint(string id)
         {
-            var ext = RandomGenExtent();
+            var ext = GetExtent();
 
             var x = ext.XMin + Rnd.NextDouble() * ext.Width;
             var y = ext.YMin + Rnd.NextDouble() * ext.Height;

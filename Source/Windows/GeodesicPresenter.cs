@@ -20,7 +20,7 @@ namespace Ellipsoidus
                 PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
-
+        
     }
 
     public class GeodesicPointPresenter : GeodesicPresenter

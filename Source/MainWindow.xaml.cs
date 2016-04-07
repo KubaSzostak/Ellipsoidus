@@ -321,6 +321,7 @@ namespace Ellipsoidus
 
         private void lineLineIntersection_Click(object sender, RoutedEventArgs e)
         {
+            lineLineIntersectionPanel.ResetPresenter();
             lineLineIntersectionPanel.UpdateLayer();
             this.sideBar.Show(lineLineIntersectionPanel, "Line-line intersection");
         }

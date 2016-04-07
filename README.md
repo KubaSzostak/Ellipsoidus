@@ -24,4 +24,3 @@ https://github.com/kubaszostak/ellipsoidus/releases
 * Andrzej Bielski (Accelerator of Ellipsoidus idea)
 
 
-...

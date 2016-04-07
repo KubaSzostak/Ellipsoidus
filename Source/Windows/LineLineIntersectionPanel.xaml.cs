@@ -49,6 +49,11 @@ namespace Ellipsoidus.Windows
             UpdateLayer();
         }
 
+        public void ResetPresenter()
+        {
+            Presenter.Init();
+        }
+
         public void UpdateLayer()
         {
             foreach (var gr in this.Graphics)
