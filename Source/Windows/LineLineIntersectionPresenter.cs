@@ -17,11 +17,22 @@ namespace Ellipsoidus
         public LineLineIntersectionPresenter()
         {
             IntersectionPoint = new GeodesicPointPresenter();
+
+            FirstLine = new GeodesicLineSegmentPresenter();
+            FirstLine.PropertyChanged += LineChanged;
+
+            SecondLine = new GeodesicLineSegmentPresenter();
+            SecondLine.PropertyChanged += LineChanged;
+
             Init();
         }
 
+        private bool _disableLineChanged = false;
         void LineChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (_disableLineChanged)
+                return;
+
             var pt = FirstLine.Line.IntersectionPoint(SecondLine.Line);
             IntersectionPoint.Point = pt.Cast("IntersectionPoint");
             NotifyPropertyChanged("IntersectionPoint");
@@ -42,12 +53,15 @@ namespace Ellipsoidus
 
         internal void Init()
         {
-            FirstLine = new GeodesicLineSegmentPresenter();
-            FirstLine.PropertyChanged += LineChanged;
+            _disableLineChanged = true;
 
-            SecondLine = new GeodesicLineSegmentPresenter();
-            SecondLine.PropertyChanged += LineChanged;
+            FirstLine.StartPoint.Point = Presenter.RandomPoint("L1.Start");
+            FirstLine.EndPoint.Point = Presenter.RandomPoint("L1.End");
 
+            SecondLine.StartPoint.Point = Presenter.RandomPoint("L2.Start");
+            SecondLine.EndPoint.Point = Presenter.RandomPoint("L2.End");
+
+            _disableLineChanged = false;
             LineChanged(this, null);
         }
     }

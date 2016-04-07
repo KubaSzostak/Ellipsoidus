@@ -52,6 +52,11 @@ namespace Ellipsoidus.Windows
                 } 
                 this.FilteredPoints = new ObservableCollection<GeodesicMapPoint>(pts);
             }
+
+            if (this.lvPoints.SelectedItem == null)
+                this.lvPoints.SelectedItem = this.FilteredPoints.FirstOrDefault();
+
+
             NotifyPropertyChanged("FilteredPoints");
         }
 

@@ -30,6 +30,7 @@ namespace Ellipsoidus.Windows
         private void select_Click(object sender, RoutedEventArgs e)
         {
             var wnd = new PointListWindow();
+            wnd.Owner = App.Current.MainWindow;
             var pt = wnd.ShowSelectPointDialog();
             if (pt != null)
                 this.Point = pt;
