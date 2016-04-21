@@ -563,9 +563,6 @@ namespace Ellipsoidus
             var shpDir = Path.Combine(destDir, "shp") + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(shpDir);
 
-            var shpMaxPrecDir = Path.Combine(destDir, "shp-max-prec") + Path.DirectorySeparatorChar;
-            Directory.CreateDirectory(shpMaxPrecDir);
-
             var txtDir = Path.Combine(destDir, "txt") + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(txtDir);
 
