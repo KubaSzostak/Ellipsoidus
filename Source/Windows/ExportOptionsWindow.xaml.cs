@@ -17,10 +17,15 @@ namespace Ellipsoidus.Windows
     /// </summary>
     public partial class ExportOptionsWindow : Window
     {
-        public ExportOptionsWindow()
+        public ExportOptionsWindow(bool showMaxDev)
         {
             InitializeComponent();
+
             this.maxDevBox.Text = (0.5).ToString();
+            if (showMaxDev)
+                this.maxDevSection.Visibility = Visibility.Visible;
+            else
+                this.maxDevSection.Visibility = Visibility.Collapsed;
 
             secPrecBox.SelectedIndex = 2;
         }

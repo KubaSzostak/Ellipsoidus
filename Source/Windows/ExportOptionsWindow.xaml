@@ -11,7 +11,7 @@
         ResizeMode="NoResize" 
         ShowInTaskbar="False" 
         WindowStartupLocation="CenterOwner"  >
-    <StackPanel Margin="8">
+    <StackPanel Margin="24,8">
         <TextBlock><Run Text="Output folder"/></TextBlock>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -26,10 +26,13 @@
         <TextBlock><Run Text="First point number"/></TextBlock>
         <TextBox x:Name="firtPointNoBox" Width="180" HorizontalAlignment="Left" Text="1001"/>        
         <Canvas Margin="4" />
+
+        <StackPanel Name="maxDevSection">
+            <TextBlock><Run Text="Max deviation [m]" ToolTip="Max deviation between arc and its linear interpolation"/></TextBlock>
+            <TextBox x:Name="maxDevBox" Width="180" HorizontalAlignment="Left" Text="0.5" ToolTip="Max deviation between arc and its linear interpolation"/>
+            <Canvas Margin="4" />
+        </StackPanel>
         
-        <TextBlock><Run Text="Max deviation [m]"/></TextBlock>
-        <TextBox x:Name="maxDevBox" Width="180" HorizontalAlignment="Left" Text="0.5"/>
-        <Canvas Margin="4" />
         <TextBlock><Run Text="Coordinate precision [seconds]"/></TextBlock>
         <ComboBox x:Name="secPrecBox" Width="180" HorizontalAlignment="Left">
             <System:String>0</System:String>
@@ -38,6 +41,8 @@
             <System:String>0.000</System:String>
             <System:String>0.0000</System:String>
         </ComboBox>
+        <Canvas Margin="4" />
+        
         <Separator Margin="0,12" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button IsDefault="True" Padding="16,2" Width="80" Click="okButton_Click" Content="OK"/>

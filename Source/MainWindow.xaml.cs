@@ -501,7 +501,7 @@ namespace Ellipsoidus
                 return;
 			}
 
-            var exportOpts = new ExportOptionsWindow();
+            var exportOpts = new ExportOptionsWindow(false);
             if (!exportOpts.ShowDialog(Path.GetDirectoryName(this.Settings.LoadBaseLineFile)))
                 return;
 
@@ -512,7 +512,8 @@ namespace Ellipsoidus
             ShapeFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.shp", -1);
             TextFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.txt", -1);
 
-            ShapeFile.SaveLineDensify(Ellipsoidus.Presenter.BaseLine.Lines, fn + "-geodesic.shp");
+            var geodesicPoints = ShapeFile.SaveLineDensify(Ellipsoidus.Presenter.BaseLine.Lines, fn + "-geodesic.shp");
+            TextFile.SavePoints(geodesicPoints, fn + "-geodesic.txt", -1);
 
 
             ShowInfoBox("Exported to " + fn + ".shp");
@@ -599,7 +600,7 @@ namespace Ellipsoidus
                 return;
 			}
 
-            var exportOpts = new ExportOptionsWindow();
+            var exportOpts = new ExportOptionsWindow(true);
             if (!exportOpts.ShowDialog(this.Settings.ExportOutputDir))
                 return;
 

@@ -114,7 +114,7 @@ namespace Esri
         /// <summary>
         /// Save line with extreme precision
         /// </summary>
-        public static void SaveLineDensify(IEnumerable<AGG.GeodesicSegment> segments, string filePath)
+        public static IEnumerable<AGG.MapPoint> SaveLineDensify(IEnumerable<AGG.GeodesicSegment> segments, string filePath)
         {
             using (var shp = NewLineShapefile())
             {
@@ -128,6 +128,7 @@ namespace Esri
                 feature.DataRow["segm_type"] = "GeodesicDensifyLine";
 
                 shp.SaveAs(filePath, true);
+                return points;
             }
         }
 
@@ -140,10 +141,13 @@ namespace Esri
                 foreach (var ptMaxPrec in pointsMaxPrecCoords)
                 {
                     var xText = Utils.ToDegMinSecString(ptMaxPrec.X, secDecPlaces);
-                    var yText = Utils.ToDegMinSecString(ptMaxPrec.X, secDecPlaces);
+                    var yText = Utils.ToDegMinSecString(ptMaxPrec.Y, secDecPlaces);
+
                     var xRounded = Utils.StringToDeg(xText);
                     var yRounded = Utils.StringToDeg(yText);
+
                     var ptRoundedCoords = new AGG.GeodesicMapPoint(ptMaxPrec.Id, xRounded, yRounded, ptMaxPrec.SpatialReference);
+                    pointsRoundedCoords.Add(ptRoundedCoords);
                 }
 
                 var geom = pointsRoundedCoords.GetLineStringFeature();
@@ -189,7 +193,7 @@ namespace Esri
             SavePoints(points, fn + "-points-max-prec.shp", firstPointNo);
 
             roundedPoints.UpdateOrigin("Densify");
-            SavePoints(points, fn + "-points.shp", firstPointNo);
+            SavePoints(roundedPoints, fn + "-points.shp", firstPointNo);
 
             return points;
         }
