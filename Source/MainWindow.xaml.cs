@@ -501,7 +501,7 @@ namespace Ellipsoidus
                 return;
 			}
 
-            var exportOpts = new ExportOptionsWindow(false);
+            var exportOpts = new ExportOptionsWindow(false, false);
             if (!exportOpts.ShowDialog(Path.GetDirectoryName(this.Settings.LoadBaseLineFile)))
                 return;
 
@@ -600,7 +600,7 @@ namespace Ellipsoidus
                 return;
 			}
 
-            var exportOpts = new ExportOptionsWindow(true);
+            var exportOpts = new ExportOptionsWindow(true, false);
             if (!exportOpts.ShowDialog(this.Settings.ExportOutputDir))
                 return;
 

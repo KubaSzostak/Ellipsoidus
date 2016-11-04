@@ -17,7 +17,7 @@ namespace Ellipsoidus.Windows
     /// </summary>
     public partial class ExportOptionsWindow : Window
     {
-        public ExportOptionsWindow(bool showMaxDev)
+        public ExportOptionsWindow(bool showMaxDev, bool showFirstPointNo)
         {
             InitializeComponent();
 
@@ -26,6 +26,11 @@ namespace Ellipsoidus.Windows
                 this.maxDevSection.Visibility = Visibility.Visible;
             else
                 this.maxDevSection.Visibility = Visibility.Collapsed;
+
+            if (showFirstPointNo)
+                this.firstPointNoSection.Visibility = Visibility.Visible;
+            else
+                this.firstPointNoSection.Visibility = Visibility.Collapsed;
 
             secPrecBox.SelectedIndex = 2;
         }
