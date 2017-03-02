@@ -606,6 +606,7 @@ namespace Ellipsoidus
 
             this.Settings.ExportOutputDir = exportOpts.FolderPath;
 
+            Utils.DensifyDist = exportOpts.DensifyDist;
             await this.StartProgress(ExportOffsetDataAsync(exportOpts.FolderPath, exportOpts.MaxDeviation, exportOpts.FirstPointNo), "Exporting offset data...");
             //ExportOffsetData(folderPath, paramsWnd.Precision);
             ShowInfoBox("Exported.");

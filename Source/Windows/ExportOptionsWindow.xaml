@@ -34,6 +34,12 @@
             <TextBox x:Name="maxDevBox" Width="180" HorizontalAlignment="Left" Text="0.5" ToolTip="Max deviation between arc and its linear interpolation"/>
             <Canvas Margin="4" />
         </StackPanel>
+
+        <StackPanel Name="geodesicLnSection">
+            <TextBlock><Run Text="Geodesic line density [m]" ToolTip="Max distance between beetween points on geodesic line"/></TextBlock>
+            <TextBox x:Name="geodesicLnDensityBox" Width="180" HorizontalAlignment="Left" Text="200" ToolTip="Max deviation between arc and its linear interpolation"/>
+            <Canvas Margin="4" />
+        </StackPanel>
         
         <TextBlock><Run Text="Coordinate precision [seconds]"/></TextBlock>
         <ComboBox x:Name="secPrecBox" Width="180" HorizontalAlignment="Left">

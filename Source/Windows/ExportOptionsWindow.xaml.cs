@@ -22,10 +22,18 @@ namespace Ellipsoidus.Windows
             InitializeComponent();
 
             this.maxDevBox.Text = (0.5).ToString();
+            this.geodesicLnDensityBox.Text = Utils.DensifyDist.ToString();
+
             if (showMaxDev)
+            { 
                 this.maxDevSection.Visibility = Visibility.Visible;
+                //this.geodesicLnSection.Visibility = Visibility.Visible;
+            }
             else
+            {
                 this.maxDevSection.Visibility = Visibility.Collapsed;
+                //this.geodesicLnSection.Visibility = Visibility.Collapsed;
+            }
 
             if (showFirstPointNo)
                 this.firstPointNoSection.Visibility = Visibility.Visible;
@@ -42,6 +50,16 @@ namespace Ellipsoidus.Windows
                 if (string.IsNullOrEmpty(this.maxDevBox.Text))
                     return double.NaN;
                 return double.Parse(this.maxDevBox.Text);
+            }
+        }
+
+        public double DensifyDist
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(this.geodesicLnDensityBox.Text))
+                    return double.NaN;
+                return double.Parse(this.geodesicLnDensityBox.Text);
             }
         }
 
@@ -71,6 +89,11 @@ namespace Ellipsoidus.Windows
             if (this.MaxDeviation < 0.001 || this.MaxDeviation > 10000.0)
             {
                 MessageBox.Show("Max deviation must be between 0.001 and 1000.0");
+                return;
+            }
+            if (this.DensifyDist < 10 )
+            {
+                MessageBox.Show("Max deviation must be greather than 10.0");
                 return;
             }
             if (this.FirstPointNo < 1)

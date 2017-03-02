@@ -14,6 +14,12 @@ namespace System
     {
         public static int SecDecPlaces = 4;
 
+        /// <summary>
+        /// Difference between geodesic straight line (1km) and parallel line (at offset 12M) is 0.1mm. 
+        /// But cutting projected lines (1km) causes about 50mm deviations
+        /// </summary>
+        public static double DensifyDist = 200.0;
+
         private static string TextFilePaht = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Ellipsoidus.txt");
 
         public static void ShowNotepad(IEnumerable<string> lines)

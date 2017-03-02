@@ -141,12 +141,8 @@ namespace Esri.ArcGISRuntime.Geometry
         public static GeodesicLineSegment Create(MapPoint start, MapPoint end)
         {
             var ln = new NETGeographicLib.GeodesicLineSegment(start.ToGeoPoint(), end.ToGeoPoint());
-            
-            // Difference between geodesic straight line (1km) and parallel line (at offset 12M) is 0.1mm
-            // But cutting projected lines (1km) causes about 50mm deviations
-            double densifyDist = 200.0;
 
-            var geoPoints = ln.GetDensifyPoints(densifyDist);
+            var geoPoints = ln.GetDensifyPoints(Utils.DensifyDist);
             var mapPoints = new List<MapPoint>();
             mapPoints.Add(start);
             foreach (var gpt in geoPoints)
