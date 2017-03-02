@@ -252,7 +252,7 @@ namespace Esri
             // Deviation: 100 mm -> Length: 67  m
  
             double len;
-            NETGeographicLib.GeodesicUtils.WGS84.Inverse(prevOffsetLn.EndPoint.ToGeoPoint(), offsetLn.StartPoint.ToGeoPoint(), out len);
+            NETGeographicLib.GeodesicUtils.ETRS89.Inverse(prevOffsetLn.EndPoint.ToGeoPoint(), offsetLn.StartPoint.ToGeoPoint(), out len);
             if (len < 5.0)
             {
                 var points = new MapPoint[] {prevOffsetLn.EndPoint, offsetLn.StartPoint};

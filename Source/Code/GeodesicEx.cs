@@ -12,14 +12,14 @@ namespace System
     {
         public static MapPoint GeodesicMove(this MapPoint startPt, double azimuth, double length)
         {
-            var gpt = NETGeographicLib.GeodesicUtils.WGS84.Direct(startPt.ToGeoPoint(), azimuth, length);
+            var gpt = NETGeographicLib.GeodesicUtils.ETRS89.Direct(startPt.ToGeoPoint(), azimuth, length);
             return gpt.ToMapPoint();
         }
 
         public static double GeodesicDistTo(this MapPoint start, MapPoint point)
         {
             double res;
-            NETGeographicLib.GeodesicUtils.WGS84.Inverse(start.ToGeoPoint(), point.ToGeoPoint(), out res);
+            NETGeographicLib.GeodesicUtils.ETRS89.Inverse(start.ToGeoPoint(), point.ToGeoPoint(), out res);
             return res;
         }
 
@@ -27,7 +27,7 @@ namespace System
         {
             double azi1; 
             double azi2;
-            NETGeographicLib.GeodesicUtils.WGS84.Inverse(start.ToGeoPoint(), point.ToGeoPoint(), out azi1, out azi2);
+            NETGeographicLib.GeodesicUtils.ETRS89.Inverse(start.ToGeoPoint(), point.ToGeoPoint(), out azi1, out azi2);
             return azi1;
         }
 
@@ -35,7 +35,7 @@ namespace System
         {
             double azi1;
             double azi2;
-            NETGeographicLib.GeodesicUtils.WGS84.Inverse(start.ToGeoPoint(), point.ToGeoPoint(), out azi1, out azi2);
+            NETGeographicLib.GeodesicUtils.ETRS89.Inverse(start.ToGeoPoint(), point.ToGeoPoint(), out azi1, out azi2);
             return azi2;
         }
 
@@ -140,7 +140,7 @@ namespace System
             if (points.Count < 1)
                 return 0.0;
 
-            var wgs = NETGeographicLib.GeodesicUtils.WGS84;
+            var wgs = NETGeographicLib.GeodesicUtils.ETRS89;
             double lenSum = 0.0;
             for (int i = 0; i < points.Count - 1; i++)
             {

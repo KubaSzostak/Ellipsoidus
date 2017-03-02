@@ -9,8 +9,8 @@ namespace NETGeographicLib
 
     public class GeodesicUtils
     {
-        public static readonly Geodesic WGS84 = new Geodesic();
-        public static readonly Gnomonic Gnomonic = new Gnomonic(WGS84);
+        public static readonly Geodesic ETRS89 = new Geodesic(6378137.0, 298.257222101);
+        public static readonly Gnomonic Gnomonic = new Gnomonic(ETRS89);
 
         private const double EarthRadius = 6371000.0; // meters
         public const double RadToDeg = 180.0 / Math.PI;
@@ -78,7 +78,7 @@ namespace NETGeographicLib
         }
 
         public GeodesicLineSegment(GeoPoint p1, GeoPoint p2)
-            : this(GeodesicUtils.WGS84, p1, p2)
+            : this(GeodesicUtils.ETRS89, p1, p2)
         { }
 
 
