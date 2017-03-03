@@ -11,6 +11,7 @@ namespace NETGeographicLib
     {
         public static readonly Geodesic ETRS89 = new Geodesic(6378137.0, 298.257222101);
         public static readonly Gnomonic Gnomonic = new Gnomonic(ETRS89);
+        public static readonly int EpsgEtrs89 = 4258;
 
         private const double EarthRadius = 6371000.0; // meters
         public const double RadToDeg = 180.0 / Math.PI;
@@ -240,13 +241,13 @@ namespace NETGeographicLib
             double segmentCount = Math.Ceiling(this.Dist12 / maxSegmentLength);
             double arcSegmLen = this.Arc12 / segmentCount;
 
-            // ArcPosition() is faster than Position()
             double arcLen = 0.0 + arcSegmLen;
             double maxArcLen = this.Arc12 - arcSegmLen * 0.1;
 
             var res = new List<GeoPoint>();
             while (arcLen < maxArcLen)
             {
+                // ArcPosition() is faster than Position()
                 var pt = this.ArcPosition(arcLen);
                 res.Add(pt);
                 arcLen += arcSegmLen;

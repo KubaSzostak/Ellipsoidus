@@ -69,7 +69,7 @@ namespace Esri
         {
             var shp = new LineShapefile();
 
-            shp.Projection = ProjectionInfo.FromEpsgCode(4326);
+            shp.Projection = ProjectionInfo.FromEpsgCode(4258);
 
             shp.DataTable.Columns.Add(new DataColumn("src_geom", typeof(string)));
             shp.DataTable.Columns.Add(new DataColumn("src_point", typeof(string)));

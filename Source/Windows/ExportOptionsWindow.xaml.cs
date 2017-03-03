@@ -109,6 +109,7 @@ namespace Ellipsoidus.Windows
             }
             Directory.CreateDirectory(FolderPath);
             Utils.SecDecPlaces = this.secPrecBox.SelectedIndex;
+            Utils.DensifyDist = this.DensifyDist;
 
 
             base.DialogResult = true;
