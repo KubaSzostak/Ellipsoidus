@@ -182,18 +182,18 @@ namespace Esri
             string fn = Path.ChangeExtension(filePath, null);
 
             var roundedPoints = SaveLineDensify(segments, fn + ".shp", maxDeviation, Utils.SecDecPlaces);
-            SaveLineDensify(segments, fn + "-geodesic.shp");
-            SaveLineSegments(segments, fn + "-segments.shp");
+            SaveLineDensify(segments, fn + "_geodesic.shp");
+            SaveLineSegments(segments, fn + "_segments.shp");
 
-            SavePoints(segments.GetVertices(), fn + "-vertices.shp", 1);
+            SavePoints(segments.GetVertices(), fn + "_vertices.shp", 1);
 
             // Parallel line can have additional points between vertices. The same as SaveLineDensify(segments, fn, _maxDev_).
             var points = segments.GetGeodesicDensifyPoints(maxDeviation).ToGeodesicPoints();
             points.UpdateOrigin("Densify");
-            SavePoints(points, fn + "-points-max-prec.shp", firstPointNo);
+            SavePoints(points, fn + "_points_max_prec.shp", firstPointNo);
 
             roundedPoints.UpdateOrigin("Densify");
-            SavePoints(roundedPoints, fn + "-points.shp", firstPointNo);
+            SavePoints(roundedPoints, fn + "_points.shp", firstPointNo);
 
             return points;
         }

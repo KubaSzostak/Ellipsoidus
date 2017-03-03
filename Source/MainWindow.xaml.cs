@@ -59,7 +59,7 @@ namespace Ellipsoidus
 
             ExeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
             if (string.IsNullOrEmpty(Settings.LoadBaseLineFile))
-                Settings.LoadBaseLineFile = Path.Combine(ExeDir, "SampleData", "de-base-line.txt");
+                Settings.LoadBaseLineFile = Path.Combine(ExeDir, "SampleData", "de_base_line.txt");
 
 			this.MapView.Map.SpatialReference = SpatialReference.Create(4326);
 
@@ -193,7 +193,7 @@ namespace Ellipsoidus
 					{
 						try
 						{
-							this.wgsCoordsBlock.Content = "WGS84: " + ConvertCoordinate.ToDegreesMinutesSeconds(mapPoint, 1);
+							this.wgsCoordsBlock.Content = "ETRF80/WGS84: " + ConvertCoordinate.ToDegreesMinutesSeconds(mapPoint, 1);
 							this.utmCoordsBlock.Content = "UTM: " + ConvertCoordinate.ToUtm(mapPoint, UtmConversionMode.UseNorthSouthLatitudeIndicators, true);
 							this.wgsCoordsBlock.Visibility = Visibility.Visible;
 							this.utmCoordsBlock.Visibility = Visibility.Visible;
@@ -509,11 +509,11 @@ namespace Ellipsoidus
 
             ShapeFile.SaveLine(Ellipsoidus.Presenter.BaseLine.Vertices, fn + ".shp");
 
-            ShapeFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.shp", -1);
-            TextFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "-points.txt", -1);
+            ShapeFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "_points.shp", -1);
+            TextFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, fn + "_points.txt", -1);
 
-            var geodesicPoints = ShapeFile.SaveLineDensify(Ellipsoidus.Presenter.BaseLine.Lines, fn + "-geodesic.shp");
-            TextFile.SavePoints(geodesicPoints, fn + "-geodesic.txt", -1);
+            var geodesicPoints = ShapeFile.SaveLineDensify(Ellipsoidus.Presenter.BaseLine.Lines, fn + "_geodesic.shp");
+            TextFile.SavePoints(geodesicPoints, fn + "_geodesic.txt", -1);
 
 
             ShowInfoBox("Exported to " + fn + ".shp");
@@ -568,14 +568,14 @@ namespace Ellipsoidus
             Directory.CreateDirectory(txtDir);
 
             var points = ShapeFile.SaveLineCombo(this.OffsetBuilder.OffsetSegments, shpDir + "offset.shp", maxDev, firstPointNo);
-            TextFile.SavePoints(points, txtDir + "offset-points.txt", firstPointNo);
-            TextFile.SavePoints(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset-vertices.txt", -1);
+            TextFile.SavePoints(points, txtDir + "offset_points.txt", firstPointNo);
+            TextFile.SavePoints(this.OffsetBuilder.OffsetSegments.GetVertices(), txtDir + "offset_vertices.txt", -1);
 
-            ShapeFile.SaveLineCombo(this.OffsetBuilder.ReferenceLine.Lines, shpDir + "base-line.shp", maxDev, firstPointNo);
-            TextFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, txtDir + "base-line.txt", -1);
+            ShapeFile.SaveLineCombo(this.OffsetBuilder.ReferenceLine.Lines, shpDir + "baseline.shp", maxDev, firstPointNo);
+            TextFile.SavePoints(Ellipsoidus.Presenter.BaseLine.Vertices, txtDir + "baseline.txt", -1);
 
             var esriBuff = GetEsriBuffer(this.OffsetBuilder.BufferDist, maxDev);
-            ShapeFile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri-buff.shp", maxDev);
+            ShapeFile.SaveEsriBuff(esriBuff.GetPoints().ToList(), shpDir + "esri_buff.shp", maxDev);
 
 
             var srcMxd = Path.Combine(ExeDir, "ExportTemplate", "ellipsoidus.mxd");
@@ -698,7 +698,7 @@ namespace Ellipsoidus
             rap.Add("Max deviation: " + devList.Max().ToString("0.000"));
             rap.Add("Min deviation: " + devList.Min().ToString("0.000"));
 
-            ShapeFile.SavePoints(points, fnShp + "-points.shp", 1);
+            ShapeFile.SavePoints(points, fnShp + "_points.shp", 1);
 
             rap.SaveToFile(fileName);
 
@@ -722,7 +722,7 @@ namespace Ellipsoidus
             if (points == null)
                 return;
 
-            var outDir = Path.ChangeExtension(this.Settings.LoadBaseLineFile, null) + "-dist-raport" + Path.DirectorySeparatorChar;
+            var outDir = Path.ChangeExtension(this.Settings.LoadBaseLineFile, null) + "_dist_raport" + Path.DirectorySeparatorChar;
             Directory.CreateDirectory(outDir);
             var fn = outDir + Path.GetFileName(this.Settings.LoadBaseLineFile);
 
