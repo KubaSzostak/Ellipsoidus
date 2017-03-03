@@ -23,6 +23,7 @@ namespace Ellipsoidus.Windows
 
             this.maxDevBox.Text = (0.5).ToString();
             this.geodesicLnDensityBox.Text = Utils.DensifyDist.ToString();
+            this.secPrecBox.SelectedIndex = Utils.SecDecPlaces;
 
             if (showMaxDev)
             { 
