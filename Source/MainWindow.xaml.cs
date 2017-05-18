@@ -853,7 +853,7 @@ namespace Ellipsoidus
         {
             if (!Presenter.GeodesicArea.HasData)
             {
-                ShowInfoBox("Nothing to save - calculate geodesic area first.");
+                ShowInfoBox("Nothing to save - add area border points.");
                 return;
             }
 
