@@ -130,7 +130,7 @@
                 <MenuItem Header="Geodesic area" IsEnabled="False" FontSize="10" />
                 <MenuItem Header="Add area border points (clockwise ↻)..." Click="addAreaPointsCW_Click" />
                 <MenuItem Header="Add reversed area border points (anticlockwise ↺)..." Click="addAreaPointsACW_Click" />
-                <MenuItem Header="Save area..." Click="saveArea_Click" />
+                <MenuItem Header="Save geodesic area info..." Click="saveArea_Click" />
                 <Separator />
                 <MenuItem Header="Clear measurements" Click="clearMeasurements_Click" />
             </MenuItem>
