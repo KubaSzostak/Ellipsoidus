@@ -140,15 +140,36 @@ namespace System
             if (points.Count < 1)
                 return 0.0;
 
-            var wgs = NETGeographicLib.GeodesicUtils.ETRS89;
+            var earth = NETGeographicLib.GeodesicUtils.ETRS89;
             double lenSum = 0.0;
             for (int i = 0; i < points.Count - 1; i++)
             {
                 double len;
-                wgs.Inverse(points[i].ToGeoPoint(), points[i + 1].ToGeoPoint(), out len);
+                earth.Inverse(points[i].ToGeoPoint(), points[i + 1].ToGeoPoint(), out len);
                 lenSum += len;
             }
             return lenSum;
+        }
+
+        public static double GeodesicArea(this IList<MapPoint> points)
+        {
+            if (points.Count < 1)
+                return 0.0;
+
+            var earth = NETGeographicLib.GeodesicUtils.ETRS89;
+
+            using (var plgArea = new NETGeographicLib.PolygonArea(earth, false))
+            {
+                foreach (var pt in points)
+                {
+                    var gpt = pt.ToGeoPoint();
+                    plgArea.AddPoint(gpt.Lat, gpt.Lon);
+                }
+                double perimeter;
+                double area;
+                plgArea.Compute(false, true, out perimeter, out area);
+                return Math.Abs(area);
+            }
         }
     }
 }

@@ -26,6 +26,7 @@
                         </esri:Map.InitialViewpoint>
                         <esri:ArcGISTiledMapServiceLayer ID="Basemap" x:Name="BasemapLayer" ServiceUri="http://services.arcgisonline.com/ArcGIS/rest/services/ESRI_StreetMap_World_2D/MapServer" />
 
+                        <esri:GraphicsLayer ID="GeodesicAreaLayer" x:Name="GeodesicAreaLayer" DisplayName="Geodesic Area" />
                         <esri:GraphicsLayer ID="CuttingLineLayer" x:Name="CuttingLineLayer" DisplayName="Cutting line" />
                         <esri:GraphicsLayer ID="TestsLayer" x:Name="TestsLayer" DisplayName="Tests" />
                         <esri:GraphicsLayer ID="DensifyLayer" x:Name="DensifyLayer" DisplayName="Densify points" IsVisible="False" />
@@ -125,6 +126,11 @@
                 <MenuItem Header="Geodesic distance between two points" Click="measureGeodesicDist_Click" />
                 <MenuItem Header="Geodesic distance to base line" Click="measureGeodesicDistToSrcLn_Click" />
                 <MenuItem Header="Geodesic linie-line intersection" Click="lineLineIntersection_Click" />
+                <Separator />
+                <MenuItem Header="Geodesic area" IsEnabled="False" FontSize="10" />
+                <MenuItem Header="Add area border points (clockwise ↻)..." Click="addAreaPointsCW_Click" />
+                <MenuItem Header="Add reversed area border points (anticlockwise ↺)..." Click="addAreaPointsACW_Click" />
+                <MenuItem Header="Save area..." Click="saveArea_Click" />
                 <Separator />
                 <MenuItem Header="Clear measurements" Click="clearMeasurements_Click" />
             </MenuItem>

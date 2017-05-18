@@ -20,6 +20,9 @@ namespace Ellipsoidus
         public static Action HideInfoBox;
         public static Func<Task, string, Task> StartProgress;
 
+        public static GeodesicAreaPresenter GeodesicArea = new GeodesicAreaPresenter();
+
+
         public static List<GeodesicMapPoint> GetPoints()
         {
             var res = new List<GeodesicMapPoint>();
@@ -91,6 +94,58 @@ namespace Ellipsoidus
 
             HideInfoBox();
             return list;
+        }
+    }
+
+    public class GeodesicAreaPresenter
+    {
+        public Polygon Polygon { get; private set; } = null;
+        public readonly List<string> SourceFilePath = new List<string>();
+        public readonly List<GeodesicMapPoint> Points = new List<GeodesicMapPoint>();
+
+        public void Clear()
+        {
+            SourceFilePath.Clear();
+            Points.Clear();
+            Polygon = null;
+        }
+
+        public bool HasData { get { return Polygon?.Parts.FirstOrDefault()?.FirstOrDefault() != null; } }
+
+        public void AddPoints(List<GeodesicMapPoint> points, string srcFilePath, string origin)
+        {
+            foreach (var pt in points)
+            {
+                pt.UpdateOrigin(origin);
+            }
+            this.Points.AddRange(points);
+
+            var mapPoints = this.Points.Cast<MapPoint>().ToList();
+            if (!mapPoints.First().IsEqual2d(mapPoints.Last()))
+                mapPoints.Add(mapPoints.First());
+
+            var plgPart = new List<IEnumerable<MapPoint>>();
+            plgPart.Add(mapPoints);
+            Polygon = new Polygon(plgPart);
+
+            SourceFilePath.Add(srcFilePath);
+            AreaAG = GeometryEngine.GeodesicArea(Polygon, GeodeticCurveType.Geodesic);
+            AreaGL = mapPoints.GeodesicArea();
+
+        }
+
+        // ArcGIS Runtime
+        public double AreaGL { get; private set; }
+
+        // GeographicLib/Karney
+        public double AreaAG { get; private set; }
+
+        public string GetInfoText()
+        {
+            return "Geodesic area \r\n"
+                + "GeographicLib:  " + (AreaGL * 0.0001).ToString("0.0000") + " ha \r\n"
+                + "ArcGIS Runtime: " + (AreaAG * 0.0001).ToString("0.0000") + " ha";
+
         }
     }
 }

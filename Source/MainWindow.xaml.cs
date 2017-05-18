@@ -70,6 +70,7 @@ namespace Ellipsoidus
             this.OffsetResultsLayer.AddPointLabelling(Symbols.Red1, "Id");
 
             this.CuttingLineLayer.AddPointLabelling(Symbols.Gray1, "Id");
+            this.GeodesicAreaLayer.AddPointLabelling(Symbols.Orange1, "Id");
 
             this.MapView.Cursor = Presenter.MapCursor;
 
@@ -329,7 +330,10 @@ namespace Ellipsoidus
 		private void clearMeasurements_Click(object sender, RoutedEventArgs e)
 		{
 			this.MeasurementsLayer.Graphics.Clear();
-		}
+            this.GeodesicAreaLayer.Graphics.Clear();
+            Ellipsoidus.Presenter.GeodesicArea.Clear();
+
+        }
 
 		private void clearTests_Click(object sender, RoutedEventArgs e)
 		{
@@ -483,6 +487,21 @@ namespace Ellipsoidus
             return TextFile.LoadPoints(dlg.FileName); 
         }
 
+        private bool SaveTextFileDialog(string text)
+        {
+            var dlg = new SaveFileDialog();
+            dlg.Filter = "Text files|*.txt";
+            dlg.InitialDirectory = Path.GetDirectoryName(this.Settings.LoadBaseLineFile);
+            //dlg.FileName = this.Settings.LoadBaseLineFile;
+
+            if (dlg.ShowDialog() != true)
+                return false;
+
+            System.IO.File.WriteAllText(dlg.FileName, text, Encoding.UTF8);
+            this.ShowInfoBox("Saved to \r\n '" + dlg.FileName);
+            return true;
+        }
+
         private async void loadFromFile_Click(object sender, RoutedEventArgs e)
         {
             var points = LoadPointsFromFileDialog();
@@ -497,10 +516,10 @@ namespace Ellipsoidus
         {
             if (Ellipsoidus.Presenter.BaseLine == null)
 			{
-				this.ShowInfoBox("Add base line");
+				this.ShowInfoBox("Add baseline");
                 return;
 			}
-
+            
             var exportOpts = new ExportOptionsWindow(false, false);
             if (!exportOpts.ShowDialog(Path.GetDirectoryName(this.Settings.LoadBaseLineFile)))
                 return;
@@ -514,8 +533,7 @@ namespace Ellipsoidus
 
             var geodesicPoints = ShapeFile.SaveLineDensify(Ellipsoidus.Presenter.BaseLine.Lines, fn + "_geodesic.shp");
             TextFile.SavePoints(geodesicPoints, fn + "_geodesic.txt", -1);
-
-
+            
             ShowInfoBox("Exported to " + fn + ".shp");
         }
 
@@ -809,5 +827,62 @@ namespace Ellipsoidus
             }
         }
 
+
+
+        private async void addAreaPointsCW_Click(object sender, RoutedEventArgs e)
+        {
+            var points = LoadPointsFromFileDialog();
+            if (points == null)
+                return;
+
+            await AddGeodesicAreaPoints(points, Settings.LoadBaseLineFile, "KeyedIn");
+        }
+
+        private async void addAreaPointsACW_Click(object sender, RoutedEventArgs e)
+        {
+            var points = LoadPointsFromFileDialog();
+            if (points == null)
+                return;
+
+            points.Reverse();
+            await AddGeodesicAreaPoints(points, Settings.LoadBaseLineFile, "KeyedIn");
+
+        }
+
+        private void saveArea_Click(object sender, RoutedEventArgs e)
+        {
+            if (!Presenter.GeodesicArea.HasData)
+            {
+                ShowInfoBox("Nothing to save - calculate geodesic area first.");
+                return;
+            }
+
+            var fileText = Presenter.GeodesicArea.GetInfoText();
+
+            fileText += "\r\n\r\n" + "Point coordinates source:";
+            foreach (var fp in Presenter.GeodesicArea.SourceFilePath)
+            {
+                fileText += "\r\n" + fp;
+            }
+
+            fileText += "\r\n\r\n" + "Calculated by Ellipsoidus";
+
+            SaveTextFileDialog(fileText);
+        }
+
+        private async Task AddGeodesicAreaPoints(List<GeodesicMapPoint> points, string srcFilePath, string origin)
+        {
+
+            Presenter.GeodesicArea.AddPoints(points, srcFilePath, "KeyedIn");
+
+            this.GeodesicAreaLayer.Graphics.Clear();
+            this.GeodesicAreaLayer.Add(Ellipsoidus.Presenter.GeodesicArea.Polygon, Symbols.Orange2.Fill);
+            this.GeodesicAreaLayer.AddPoints(Presenter.GeodesicArea.Points, Symbols.Orange1.Point);
+
+            await MapView.SetViewAsync(Ellipsoidus.Presenter.GeodesicArea.Polygon.Extent.Expand(2.0));
+
+
+            this.ShowInfoBox(Presenter.GeodesicArea.GetInfoText());
+        }
     }
 }
