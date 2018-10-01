@@ -17,7 +17,7 @@ namespace Ellipsoidus
             {
                 dsc += ": ";
             }
-            base.Add(dsc + Utils.WgsPointToSTring(pt));
+            base.Add(dsc + Utils.WgsPointToString(pt));
         }
 
         public void AddLineInfo(GeodesicLineSegment ln, string header = null)
@@ -29,11 +29,11 @@ namespace Ellipsoidus
                 prefix = "  ";
             }
 
-            base.Add(prefix + "Start point: " + Utils.WgsPointToSTring(ln.StartPoint));
-            base.Add(prefix + "End point: " + Utils.WgsPointToSTring(ln.EndPoint));
+            base.Add(prefix + "Start point: " + Utils.WgsPointToString(ln.StartPoint));
+            base.Add(prefix + "End point:   " + Utils.WgsPointToString(ln.EndPoint));
             base.Add(prefix + "Distance: " + Utils.DistToString(ln));
             base.Add(prefix + "Start Azimuth: " + Utils.ToDegMinSecString(ln.StartAzimuth));
-            base.Add(prefix + "End Azimuth: " + Utils.ToDegMinSecString(ln.EndAzimuth));
+            base.Add(prefix + "End Azimuth:   " + Utils.ToDegMinSecString(ln.EndAzimuth));
             base.Add("");
         }
 

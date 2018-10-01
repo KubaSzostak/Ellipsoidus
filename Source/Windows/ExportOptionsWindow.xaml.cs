@@ -21,7 +21,7 @@ namespace Ellipsoidus.Windows
         {
             InitializeComponent();
 
-            this.maxDevBox.Text = (0.5).ToString();
+            this.maxDevBox.Text = Utils.MaxDeviation.ToString();
             this.geodesicLnDensityBox.Text = Utils.DensifyDist.ToString();
             this.secPrecBox.SelectedIndex = Utils.SecDecPlaces;
 

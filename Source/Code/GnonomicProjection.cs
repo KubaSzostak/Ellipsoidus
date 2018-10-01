@@ -1,9 +1,6 @@
 ﻿using Esri.ArcGISRuntime.Geometry;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static System.Math;
 
 namespace Esri
 {
@@ -21,17 +18,7 @@ namespace Esri
 
         private double l0; // central longitude lambda_0
         private double p1; // central latitude phi_1
-
-        private double Sin(double v)
-        {
-            return Math.Sin(v);
-        }
-
-        private double Cos(double v)
-        {
-            return Math.Cos(v);
-        }
-
+        
         public MapPoint FromWgs(double lat, double lon)
         {
             var l = lon;

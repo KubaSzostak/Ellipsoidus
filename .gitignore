@@ -384,3 +384,5 @@ FakesAssemblies/
 /Source/ExportTemplate/shp/baseline.sbn
 /Source/ExportTemplate/shp/baseline.prj
 /Source/ExportTemplate/shp/baseline.dbf
+/GeographicLib/bac/NETGeographic.dll
+/GeographicLib/bac

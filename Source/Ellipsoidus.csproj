@@ -82,7 +82,7 @@
       <HintPath>..\packages\DotSpatial.Topology.1.7\lib\net40-Client\DotSpatial.Topology.dll</HintPath>
     </Reference>
     <Reference Include="Esri.ArcGISRuntime, Version=10.2.5.0, Culture=neutral, PublicKeyToken=8fc3cc631e44ad86, processorArchitecture=MSIL" />
-    <Reference Include="NETGeographic, Version=1.33.5607.40871, Culture=neutral, processorArchitecture=x86">
+    <Reference Include="NETGeographic, Version=1.33.5596.10776, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\GeographicLib\NETGeographic.dll</HintPath>
     </Reference>
@@ -113,6 +113,9 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ArcGISRuntime\ArcGISRuntimeEx.cs" />
+    <Compile Include="Builders\DistToBaseLineRaportBuilder.cs" />
+    <Compile Include="Builders\OffsetDataExportBuilder.cs" />
+    <Compile Include="Builders\RaportBuilder.cs" />
     <Compile Include="Code\Ellipsoidus.cs" />
     <Compile Include="Code\GeographicLibExtensions.cs" />
     <Compile Include="Code\GeographicLib.cs" />
@@ -120,9 +123,14 @@
     <Compile Include="ArcGISRuntime\Symbols.cs" />
     <Compile Include="Code\Geodesic.cs" />
     <Compile Include="Code\GeodesicEx.cs" />
-    <Compile Include="Code\GeodesicOffsetBuilder.cs" />
+    <Compile Include="Builders\GeodesicOffsetBuilder.cs" />
     <Compile Include="Code\GnonomicProjection.cs" />
+    <Compile Include="Builders\MedianLineBuilder.cs" />
+    <Compile Include="Builders\Builder.cs" />
     <Compile Include="Windows\GeodesicPresenter.cs" />
+    <Compile Include="Windows\LineLengthAzPanel.xaml.cs">
+      <DependentUpon>LineLengthAzPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\LineLineIntersectionPanel.xaml.cs">
       <DependentUpon>LineLineIntersectionPanel.xaml</DependentUpon>
     </Compile>
@@ -161,6 +169,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Windows\ExportOptionsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\LineLengthAzPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

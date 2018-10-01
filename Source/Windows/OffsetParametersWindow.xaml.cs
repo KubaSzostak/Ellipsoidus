@@ -22,7 +22,8 @@ namespace Ellipsoidus.Windows
         public OffsetParametersWindow()
         {
             this.InitializeComponent();
-            this.maxDevBox.Text = 0.1.ToString();
+            this.maxDevBox.Text = Utils.MaxDeviation.ToString();
+            this.distBox.Text = Utils.OffsetDistance.ToString();
         }
 
         public double MaxDeviation

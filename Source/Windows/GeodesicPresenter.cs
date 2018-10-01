@@ -15,10 +15,7 @@ namespace Ellipsoidus
         public event PropertyChangedEventHandler PropertyChanged;
         protected void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         
     }
@@ -87,11 +84,11 @@ namespace Ellipsoidus
             this.StartPoint.PropertyChanged += (s, e) =>
             {
                 var spt = this.StartPoint.Point;
-                if (!spt.IsEqual2d(_line.StartPoint))
+                if (!spt.IsEqual2d(Line.StartPoint))
                 {
-                    _line = GeodesicLineSegment.Create(spt, EndPoint.Point);
-                    NotifyPropertyChanged("StartPoint");
-                    NotifyPropertyChanged("Line");
+                    Line = GeodesicLineSegment.Create(spt, EndPoint.Point);
+                    NotifyPropertyChanged(nameof(StartPoint));
+                    NotifyLineChanged();
                 }
             };
 
@@ -99,23 +96,33 @@ namespace Ellipsoidus
             this.EndPoint.PropertyChanged += (s, e) =>
             {
                 var ept = this.EndPoint.Point;
-                if (!ept.IsEqual2d(_line.EndPoint))
+                if (!ept.IsEqual2d(Line.EndPoint))
                 {
-                    _line = GeodesicLineSegment.Create(StartPoint.Point, ept);
-                    NotifyPropertyChanged("EndPoint");
-                    NotifyPropertyChanged("Line");
+                    Line = GeodesicLineSegment.Create(StartPoint.Point, ept);
+                    NotifyPropertyChanged(nameof(EndPoint));
+                    NotifyLineChanged();
                 }
             };
-            _line = GeodesicLineSegment.Create(StartPoint.Point, EndPoint.Point);
+            Line = GeodesicLineSegment.Create(StartPoint.Point, EndPoint.Point);
+        }
+
+        private void NotifyLineChanged()
+        {
+            NotifyPropertyChanged(nameof(LengthText));
+            NotifyPropertyChanged(nameof(StartAzimuthText));
+            NotifyPropertyChanged(nameof(MidAzimuthText));
+            NotifyPropertyChanged(nameof(EndAzimuthText));
         }
 
         public GeodesicPointPresenter StartPoint { get; private set; }
         public GeodesicPointPresenter EndPoint { get; private set; }
 
-        private GeodesicLineSegment _line = GeodesicLineSegment.Create(new MapPoint(1, 2), new MapPoint(33, 44));
-        public GeodesicLineSegment Line
-        {
-            get { return _line; }
-        }
+        public string LengthText { get { return Utils.DistToString(Line); } }
+
+        public string StartAzimuthText { get { return Utils.ToDegMinSecString(Line.StartAzimuth); } }
+        public string MidAzimuthText { get { return Utils.ToDegMinSecString(Line.MidAzimuth); } }
+        public string EndAzimuthText { get { return Utils.ToDegMinSecString(Line.EndAzimuth); } }
+
+        public GeodesicLineSegment Line { get; private set; } = GeodesicLineSegment.Create(new MapPoint(1, 2), new MapPoint(33, 44));
     }
 }

@@ -13,12 +13,12 @@ namespace Ellipsoidus
     public class Presenter
     {
         public static readonly Cursor MapCursor = Cursors.Hand;
-        public static GeodesicPolyline BaseLine = null;
+        public static GeodesicPolyline BaseLine1 = null;
+        public static GeodesicPolyline BaseLine2 = null;
         public static GeodesicPolyline CuttingLine = null;
         public static MapView MapView = null;
         public static Action<string> ShowInfoBox;
         public static Action HideInfoBox;
-        public static Func<Task, string, Task> StartProgress;
 
         public static GeodesicAreaPresenter GeodesicArea = new GeodesicAreaPresenter();
 
@@ -27,8 +27,8 @@ namespace Ellipsoidus
         {
             var res = new List<GeodesicMapPoint>();
 
-            if (BaseLine != null)
-                res.AddRange(BaseLine.Vertices);
+            if (BaseLine1 != null)
+                res.AddRange(BaseLine1.Vertices);
 
             if (CuttingLine != null)
                 res.AddRange(CuttingLine.Vertices);
@@ -134,10 +134,10 @@ namespace Ellipsoidus
 
         }
 
-        // ArcGIS Runtime
+        // GeographicLib/Karney
         public double AreaGL { get; private set; }
 
-        // GeographicLib/Karney
+        // ArcGIS Runtime
         public double AreaAG { get; private set; }
 
         public string GetInfoText()

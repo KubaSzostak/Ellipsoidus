@@ -13,6 +13,8 @@ namespace System
     public class Utils
     {
         public static int SecDecPlaces = 4;
+        public static double OffsetDistance = 22224;
+        public static double MaxDeviation = 0.1;
 
         /// <summary>
         /// Difference between geodesic straight line (1km) and parallel line (at offset 12M) is 0.1mm. 
@@ -111,7 +113,7 @@ namespace System
             }
         }
 
-        public static string WgsPointToSTring(MapPoint pt)
+        public static string WgsPointToString(MapPoint pt)
         {
             if (!pt.SpatialReference.IsGeographic)
             {
@@ -133,9 +135,9 @@ namespace System
         {
             var dist = ln.Length;
             if (dist > 0.1)
-                return ln.Length.ToString("0.000") + " (" + Utils.ToDegMinSecString(ln.ArcLength) + ")";
+                return ln.Length.ToString("0.000") + " m (" + Utils.ToDegMinSecString(ln.ArcLength) + ")";
             else
-                return ln.Length.ToString("0.0000") + " (" + Utils.ToDegMinSecString(ln.ArcLength) + ")";
+                return ln.Length.ToString("0.0000") + " m (" + Utils.ToDegMinSecString(ln.ArcLength) + ")";
         }
 
         public static string RoundDist(double dist)

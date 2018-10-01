@@ -87,11 +87,14 @@
 
         <Menu VerticalAlignment="Top" Name="menuBar">
 
-            <MenuItem Header="Base line" Padding="4">
+            <MenuItem Header="Baseline" Padding="4">
+                <MenuItem Header="First baseline (1)" IsEnabled="False" FontSize="10" />
                 <MenuItem Header="Draw line" Click="addLine_Click" />
-                <MenuItem Header="Load from file..." ToolTip="File format: Id X Y" Click="loadFromFile_Click" />
+                <MenuItem Header="Load from file..." ToolTip="File format: Id ɸ λ" Click="LoadBaseLine1FromFile_Click" />
+                <MenuItem Header="Export to Shapefile" Click="BaseLineSave_Click" />
                 <Separator />
-                <MenuItem Header="Export to Shapefile" Click="baseLineSave_Click" />
+                <MenuItem Header="Second baseline (2)" IsEnabled="False" FontSize="10" />
+                <MenuItem Header="Load from file..."  Name="mnuLoadBaseLine2" IsEnabled="False" ToolTip="File format: Id ɸ λ" Click="LoadBaseLine2FromFile_Click" />
             </MenuItem>
 
             <MenuItem Header="Cutting line" Padding="4" Name="mnuCuttingLine" IsEnabled="False">
@@ -101,19 +104,46 @@
                 <MenuItem Header="Clear cutting line" Click="clearCuttingLine_Click" />
             </MenuItem>
 
-            <MenuItem Header="Geodesic Offset" Padding="4" Name="mnuGeodesicOffset" IsEnabled="False">
-                <MenuItem Header="Ellipsoidus (Karney/Vincenty)" IsEnabled="False" FontSize="10" />
-                <MenuItem Header="Generate geodesic offset" ToolTip="Offset using Karney's/Vincenty's algorithms" Click="offsetButton_Click" />
+            <MenuItem Header="Geodesic calculations" Padding="4" Name="mnuGeodesicOffset" IsEnabled="False">
+                <MenuItem 
+                    Header="Ellipsoidus (Karney/Vincenty)" 
+                    IsEnabled="False" 
+                    FontSize="10" />
+                <MenuItem 
+                    Header="Generate geodesic offset" 
+                    ToolTip="Offset using Karney's/Vincenty's algorithms" 
+                    Click="offsetButton_Click" />
+                <MenuItem 
+                    Visibility="Collapsed"
+                    Header="Generate median line" 
+                    Name="mnuGenerateMedianLine"
+                    Click="GenerateMedianLine_Click"
+                    ToolTip="Every point of median line is equidistant from the nearest points on the baselines" />
                 <Separator />
-                <MenuItem Header="ESRI buffer" IsEnabled="False" FontSize="10" />
-                <MenuItem Header="Generate geodesic buffer" ToolTip="Buffer using ESRI algorithms" Click="bufferButton_Click" />
+                <MenuItem 
+                    Header="ESRI buffer" 
+                    IsEnabled="False" 
+                    FontSize="10" />
+                <MenuItem 
+                    Header="Generate geodesic buffer" 
+                    ToolTip="Buffer using ESRI algorithms" 
+                    Click="bufferButton_Click" />
                 <Separator />
-                <MenuItem Header="Save results" IsEnabled="False" FontSize="10" />
-                <MenuItem Name="offsetrButtonSave" Header="Export to Shapefiles + MXD" ToolTip="Save ShapeFiles and text files with coordinates" Click="offsetButtonSave_Click" />
+                <MenuItem 
+                    Header="Save results" 
+                    IsEnabled="False" 
+                    FontSize="10" />
+                <MenuItem 
+                    Name="offsetrButtonSave" 
+                    Header="Export to Shapefiles + MXD" 
+                    ToolTip="Save ShapeFiles and text files with coordinates" 
+                    Click="offsetButtonSave_Click" />
                 <Separator />
-                <MenuItem Header="Clear results" Click="clearToolsResultsButton_Click" />
+                <MenuItem 
+                    Header="Clear results" 
+                    Click="clearToolsResultsButton_Click" />
             </MenuItem>
-
+            
             <MenuItem Header="Tests">
                 <MenuItem Header="Geodesic line -  parallel line" Click="deviationsGeodesicParallelLineButton_Click" />
                 <MenuItem Header="Distance to base line from file..." Click="distToBaseLineFile_Click" />
@@ -126,11 +156,12 @@
                 <MenuItem Header="Geodesic distance between two points" Click="measureGeodesicDist_Click" />
                 <MenuItem Header="Geodesic distance to base line" Click="measureGeodesicDistToSrcLn_Click" />
                 <MenuItem Header="Geodesic linie-line intersection" Click="lineLineIntersection_Click" />
+                <MenuItem Header="Geodesic line length and azimuth" Click="lineLengthAz_Click" />
                 <Separator />
                 <MenuItem Header="Geodesic area" IsEnabled="False" FontSize="10" />
-                <MenuItem Header="Add area border points (clockwise ↻)..." Click="addAreaPointsCW_Click" />
-                <MenuItem Header="Add reversed area border points (anticlockwise ↺)..." Click="addAreaPointsACW_Click" />
-                <MenuItem Header="Save geodesic area info..." Click="saveArea_Click" />
+                <MenuItem Header="Add area border points (clockwise ↻)..." Click="addAreaPointsCW_Click" ToolTip="Add area border line part" />
+                <MenuItem Header="Add reversed area border points (anticlockwise ↺)..." Click="addAreaPointsACW_Click"  ToolTip="Add area border line part" />
+                <MenuItem Header="Save geodesic area info..." Click="saveArea_Click"  ToolTip="Join all area border points (line parts), export densified area border and calculate area on ellipsoid surface."/>
                 <Separator />
                 <MenuItem Header="Clear measurements" Click="clearMeasurements_Click" />
             </MenuItem>
@@ -155,14 +186,14 @@
             <Separator />
 
             <MenuItem Header="Info" Padding="4">
-                <MenuItem Header="Ellipsoidus 1.0" IsEnabled="False" FontWeight="Bold"  />
+                <MenuItem Header="Ellipsoidus 1.3" IsEnabled="False" FontWeight="Bold"  />
                 <MenuItem Header="kuba.szostak@gmail.com" IsEnabled="False" FontSize="10" />
                 <MenuItem Header="Ellipsoidus website" Tag="http://github.com/kubaszostak/ellipsoidus/" Click="websiteButton_Click" />
                 <Separator />
                 <MenuItem Header="Credits" IsEnabled="False" FontSize="10" />
                 <MenuItem Header="ArcGIS Runtime SDK for .NET" Tag="https://developers.arcgis.com/net/" ToolTip="Mapping API provided by Esri ArcGIS Runtime SDK for .NET." Click="websiteButton_Click" />
                 <MenuItem Header="GeographicLib by Charles Karney" Tag="http://geographiclib.sourceforge.net/" Click="websiteButton_Click" />
-                <MenuItem Header="DotSpatial (Shapefile Tools)" Tag="http://dotspatial.codeplex.com/"  Click="websiteButton_Click" />
+                <MenuItem Header="DotSpatial (Shapefile Tools)" Tag="https://github.com/DotSpatial/DotSpatial"  Click="websiteButton_Click" />
             </MenuItem>
             
         </Menu>

@@ -7,10 +7,17 @@ using System.Threading.Tasks;
 namespace NETGeographicLib
 {
 
+    public class ETRS89 : Geodesic
+    {
+        public ETRS89() : base(6378137.0, 298.257222101)
+        { }
+    }
+
     public class GeodesicUtils
     {
-        public static readonly Geodesic ETRS89 = new Geodesic(6378137.0, 298.257222101);
-        public static readonly Gnomonic Gnomonic = new Gnomonic(ETRS89);
+        public static readonly Geodesic ETRS89 = new ETRS89();
+        public static readonly Geodesic DefaultGeodesic = ETRS89;
+        public static readonly Gnomonic Gnomonic = new Gnomonic(DefaultGeodesic); // TODO: It should be initialized based on *current* DefaultGeodesic
         public static readonly int EpsgEtrs89 = 4258;
 
         private const double EarthRadius = 6371000.0; // meters
@@ -79,57 +86,39 @@ namespace NETGeographicLib
         }
 
         public GeodesicLineSegment(GeoPoint p1, GeoPoint p2)
-            : this(GeodesicUtils.ETRS89, p1, p2)
+            : this(GeodesicUtils.DefaultGeodesic, p1, p2)
         { }
 
 
         public GeoPoint ArcPosition(double arc)
         {
-            double lat;
-            double lon;
-            Line.ArcPosition(arc, out lat, out lon);
-
+            Line.ArcPosition(arc, out double lat, out double lon);
             return new GeoPoint(lat, lon);
         }
         public GeoPoint ArcPosition(double arc, out double azi)
         {
-            double lat;
-            double lon;
-            Line.ArcPosition(arc, out lat, out lon, out azi);
-
+            Line.ArcPosition(arc, out double lat, out double lon, out azi);
             return new GeoPoint(lat, lon);
         }
         public GeoPoint ArcPosition(double arc, out double azi, out double s)
         {
-            double lat;
-            double lon;
-            Line.ArcPosition(arc, out lat, out lon, out azi, out s);
-
+            Line.ArcPosition(arc, out double lat, out double lon, out azi, out s);
             return new GeoPoint(lat, lon);
         }
 
         public GeoPoint Position(double s)
         {
-            double lat;
-            double lon;
-            Line.Position(s, out lat, out lon);
-
+            Line.Position(s, out double lat, out double lon);
             return new GeoPoint(lat, lon);
         }
         public GeoPoint Position(double s, out double arc)
         {
-            double lat;
-            double lon;
-            arc = Line.Position(s, out lat, out lon);
-
+            arc = Line.Position(s, out double lat, out double lon);
             return new GeoPoint(lat, lon);
         }
         public GeoPoint Position(double s, out double arc, out double azi)
         {
-            double lat;
-            double lon;
-            arc = Line.Position(s, out lat, out lon, out azi);
-
+            arc = Line.Position(s, out double lat, out double lon, out azi);
             return new GeoPoint(lat, lon);
         }
 
@@ -137,9 +126,7 @@ namespace NETGeographicLib
 
         public GeoPoint NearestCoordinate(GeoPoint point, out bool perpendicularCross)
         {
-            double temp;
-            double az1;
-            Geodesic.Inverse(this.Point1, point, out az1, out temp);                
+            Geodesic.Inverse(this.Point1, point, out double az1, out double temp);
             var startAngle = GeodesicUtils.GetAngle(this.Azi1, az1);
 
             // Point is 'before' line
@@ -149,8 +136,7 @@ namespace NETGeographicLib
                 return this.Point1;
             }
 
-            double az2;
-            Geodesic.Inverse(this.Point2, point, out az2, out temp);
+            Geodesic.Inverse(this.Point2, point, out double az2, out temp);
             var endAngle = GeodesicUtils.GetAngle(this.Azi2, az2);
 
             // Point is 'after' line
@@ -196,11 +182,8 @@ namespace NETGeographicLib
 
         public double DistTo(GeoPoint point)
         {
-            bool cross;
-            double res;
-
-            var near = NearestCoordinate(point, out cross);
-            this.Geodesic.Inverse(near, point, out res);
+            var near = NearestCoordinate(point, out bool cross);
+            this.Geodesic.Inverse(near, point, out double res);
 
             return res;
         }

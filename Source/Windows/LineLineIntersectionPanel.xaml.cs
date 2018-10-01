@@ -83,17 +83,17 @@ namespace Ellipsoidus.Windows
             var s = "";
 
             s += "First line:" + "\r\n";
-            s += Utils.WgsPointToSTring(Presenter.FirstLine.StartPoint.Point) + "\r\n";
-            s += Utils.WgsPointToSTring(Presenter.FirstLine.EndPoint.Point) + "\r\n";
+            s += Utils.WgsPointToString(Presenter.FirstLine.StartPoint.Point) + "\r\n";
+            s += Utils.WgsPointToString(Presenter.FirstLine.EndPoint.Point) + "\r\n";
             s += "\r\n";
 
             s += "Second line:" + "\r\n";
-            s += Utils.WgsPointToSTring(Presenter.SecondLine.StartPoint.Point) + "\r\n";
-            s += Utils.WgsPointToSTring(Presenter.SecondLine.EndPoint.Point) + "\r\n";
+            s += Utils.WgsPointToString(Presenter.SecondLine.StartPoint.Point) + "\r\n";
+            s += Utils.WgsPointToString(Presenter.SecondLine.EndPoint.Point) + "\r\n";
             s += "\r\n";
 
             s += "Intersection point:" + "\r\n";
-            s += Utils.WgsPointToSTring(Presenter.IntersectionPoint.Point) + "\r\n";
+            s += Utils.WgsPointToString(Presenter.IntersectionPoint.Point) + "\r\n";
 
             Clipboard.SetText(s);
         }

@@ -19,7 +19,7 @@ namespace Esri.ArcGISRuntime.Geometry
 
         public static bool IsZeroLength(double length)
         {
-            return length < NETGeographicLib.GeodesicUtils.DistanceEpsilon * 0.1;
+            return Math.Abs(length) < NETGeographicLib.GeodesicUtils.DistanceEpsilon;
         }
 
     }
@@ -34,6 +34,10 @@ namespace Esri.ArcGISRuntime.Geometry
         public double DensifyDist { get; private set; }
 
         public string Origin { get; private set; }
+
+        /// <summary>
+        /// Geodesic length
+        /// </summary>
         public double Length { get; private set; }
 
 
@@ -111,7 +115,7 @@ namespace Esri.ArcGISRuntime.Geometry
         }
     }
 
-    public class GeodesicLineSegment : GeodesicSegment
+    public class GeodesicLineSegment : GeodesicSegment, IComparable<GeodesicLineSegment>
     {
 
         public double StartAzimuth { get; private set; }
@@ -138,11 +142,13 @@ namespace Esri.ArcGISRuntime.Geometry
             this.MidAzimuth = midAz;
         }
 
+
+
         public static GeodesicLineSegment Create(MapPoint start, MapPoint end)
         {
             var ln = new NETGeographicLib.GeodesicLineSegment(start.ToGeoPoint(), end.ToGeoPoint());
 
-            var geoPoints = ln.GetDensifyPoints(Utils.DensifyDist);
+            var geoPoints = ln.GetDensifyPoints(Utils.DensifyDist); //TODO: It should be something like 100 m - not user entered value
             var mapPoints = new List<MapPoint>();
             mapPoints.Add(start);
             foreach (var gpt in geoPoints)
@@ -206,13 +212,40 @@ namespace Esri.ArcGISRuntime.Geometry
             return res;
         }
 
+        public GeodesicProximity NearestVertex(MapPoint point)
+        {
+            var startDist = point.GeodesicDistTo(this.StartPoint);
+            var endDist = point.GeodesicDistTo(this.EndPoint);
+
+            var res = new GeodesicProximity();
+            res.Line = this;
+            if (startDist < endDist)
+            {
+                res.Point = this.StartPoint;
+                res.Distance = startDist;
+            }
+            else
+            {
+                res.Point = this.EndPoint;
+                res.Distance = endDist;
+            }
+
+            return res;
+        }
+
+        public int CompareTo(GeodesicLineSegment other)
+        {
+            if (other == null)
+                return 1;
+            return this.Length.CompareTo(other.Length);
+        }
     }
 
     public class GeodesicProximity
     {
         public GeodesicLineSegment Line { get; internal set; }
         public MapPoint Point { get; internal set; }
-        public double Distance { get; internal set; }
+        public double Distance { get; internal set; } 
 
     }
 
@@ -412,6 +445,20 @@ namespace Esri.ArcGISRuntime.Geometry
             return GeodesicPolyline.Create(lines);
         }
 
+
+        /// <summary>
+        /// Update origin only if does not have value
+        /// </summary>
+        /// <param name="origin"></param>
+        public void UpdateOrigin(string origin)
+        {
+            foreach (var ln in this.Lines)
+            {
+                ln.UpdateOrigin(origin);
+            }
+        }
+
+
         public double GeodesicDistTo(MapPoint point)
         {
             var res = double.MaxValue;
@@ -431,6 +478,20 @@ namespace Esri.ArcGISRuntime.Geometry
             foreach (var ln in this.Lines)
             {
                 var near = ln.NearestCoordinate(point);
+                if (near.Distance < res.Distance)
+                    res = near;
+            }
+            return res;
+        }
+
+        public GeodesicProximity NearestVertex(MapPoint point)
+        {
+            var res = new GeodesicProximity();
+            res.Distance = double.MaxValue;
+
+            foreach (var ln in this.Lines)
+            {
+                var near = ln.NearestVertex(point);
                 if (near.Distance < res.Distance)
                     res = near;
             }

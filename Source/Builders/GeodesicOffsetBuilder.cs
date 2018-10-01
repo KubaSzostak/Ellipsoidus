@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-namespace Esri
+
+
+namespace Ellipsoidus
 {
-    public class GeodesicOffsetBuilder
+    public class GeodesicOffsetBuilder : Builder
     {
         public List<GeodesicArc> OffsetArcs = new List<GeodesicArc>();
         public List<GeodesicOffsetLine> OffsetLines = new List<GeodesicOffsetLine>();
@@ -26,7 +28,6 @@ namespace Esri
 
         public GeodesicPolyline ReferenceLine { get; private set; }
         public double BufferDist { get; private set; }
-        public TimeSpan BuildTime { get; private set; }
 
         public GeodesicMapPoint SegmentErrorPoint { get; private set; }
 
@@ -51,9 +52,8 @@ namespace Esri
             }
         }
 
-        public void Build()
+        public override void Build()
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
             this.OffsetArcs.Clear();
             this.OffsetLines.Clear();
             this.SourceAuxiliaryLines.Clear();
@@ -70,14 +70,6 @@ namespace Esri
             this.BuildSegments();
             this.RemoveSegmentsOutOfCuttingLine();
 
-            sw.Stop();
-            this.BuildTime = sw.Elapsed;
-        }
-
-        public Task BuildAsync()
-        {
-            var action = new Action(this.Build);
-            return Task.Run(action, CancellationToken.None);
         }
 
 
@@ -250,9 +242,8 @@ namespace Esri
             // Deviation: 1.0 mm -> Length: 6.6 m
             // Deviation: 10  mm -> Length: 21  m
             // Deviation: 100 mm -> Length: 67  m
- 
-            double len;
-            NETGeographicLib.GeodesicUtils.ETRS89.Inverse(prevOffsetLn.EndPoint.ToGeoPoint(), offsetLn.StartPoint.ToGeoPoint(), out len);
+
+            NETGeographicLib.GeodesicUtils.DefaultGeodesic.Inverse(prevOffsetLn.EndPoint.ToGeoPoint(), offsetLn.StartPoint.ToGeoPoint(), out double len);
             if (len < 5.0)
             {
                 var points = new MapPoint[] {prevOffsetLn.EndPoint, offsetLn.StartPoint};
